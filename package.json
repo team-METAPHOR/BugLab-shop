@@ -1,18 +1,22 @@
 {
   "name": "buglab-shop",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "vite",
+    "dev:server": "npm --prefix server run dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "start:dev": "npm --prefix server run start:dev",
+    "start:prod": "npm --prefix server run start:prod",
+    "setup": "npm install && npm --prefix server install"
   },
   "dependencies": {
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0",
