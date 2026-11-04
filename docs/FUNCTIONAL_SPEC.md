@@ -135,7 +135,7 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 | `search-submit` | button | 헤더 | "검색" |
 | `search-summary` | p | `/` | 검색어가 있을 때만. 예: `'키보드' 검색 결과 2개` |
 | `search-results` | ul | `/` | 상품 카드 목록 컨테이너 |
-| `product-card` | li > a | `/` | `data-product-id` 속성 |
+| `product-card` | li | `/` | `data-product-id` 속성. 안쪽의 `a`가 상세로 이동 |
 | `empty-results` | p | `/` | "검색 결과가 없습니다." |
 | `sold-out-badge` | span | 카드·상세 | "품절" |
 | `product-name` | h1 | 상세 | |
@@ -153,7 +153,7 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 | `login-error` | p | `/login` | |
 | `signup-name` / `signup-email` / `signup-password` / `signup-submit` / `signup-error` | | `/signup` | |
 | `cart-item` | li | `/cart` | `data-product-id` 속성 |
-| `cart-item-name` | span | 행 | |
+| `cart-item-name` | a | 행 | 상품 상세 링크 |
 | `cart-quantity` | span | 행 | 숫자만. 예: `2` |
 | `quantity-decrease` / `quantity-increase` | button | 행 | aria-label "수량 줄이기"/"수량 늘리기" |
 | `cart-line-total` | span | 행 | |

@@ -13,7 +13,7 @@
 - CORS 헤더를 보내지 않는다.
 - 모든 응답에 `Cache-Control: no-store`(API 한정).
 - 금액은 원 단위 정수.
-- 정의되지 않은 `/api/*` 경로는 `404 NOT_FOUND`.
+- 정의되지 않은 `/api/*` 경로는 `404 NOT_FOUND`. 단, 인증이 필요한 `/api/cart` 아래의 미정의 경로는 인증 검사가 먼저 실행되어 비로그인 시 `401 UNAUTHENTICATED`가 된다.
 
 ### 오류 형식
 

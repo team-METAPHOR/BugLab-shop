@@ -32,9 +32,11 @@ dev 사이트는 운영과 같은 코드·같은 로그인 화면을 쓰고, 고
 
 두 시도를 병렬로 돌리려면 시도마다 다른 계정(qa1, qa2)을 쓴다. 순차 실행이면 같은 계정을 초기화해서 써도 된다.
 
-## 4. 엔진 요청 허용 범위
+## 4. 엔진 요청 허용 범위와 필요한 엔진 변경
 
-현재 Core_engine은 GET/HEAD/OPTIONS만 허용한다. 실제 인증 서버를 쓰므로 아래 POST/PATCH를 **정확한 경로 단위로** 허용하는 정책 확장이 필요하다. 이 작업은 엔진 담당 범위이고, BugLab-shop 쪽에서는 아직 반영하지 않았다.
+현재 Core_engine(b5fdf52)으로는 이 사이트의 어떤 시나리오도 끝까지 실행할 수 없다. 2026-11-04 독립 검증에서 원본 엔진을 실제로 실행해 확인했다. 아래 변경은 엔진 담당 범위이고, BugLab-shop 쪽에서는 반영할 것이 없다.
+
+### 4.1 허용할 요청
 
 | 메서드 | 경로 | 필요한 시나리오 |
 |---|---|---|
@@ -45,7 +47,15 @@ dev 사이트는 운영과 같은 코드·같은 로그인 화면을 쓰고, 고
 | PATCH | `/api/cart/items/:productId` | B02 |
 | POST | `/api/cart/coupons` | B01 |
 
-차단 권장: `/api/auth/signup`, `/api/auth/logout`, `DELETE *`, `/api/test/*`(브라우저에서는 금지). 브라우저가 이 밖의 요청을 보내지 않도록 프론트는 외부 리소스(폰트·CDN·분석 스크립트)를 쓰지 않는다. 화면은 WebSocket·SSE·서비스 워커를 쓰지 않는다.
+차단 권장: `/api/auth/signup`, `/api/auth/logout`, `DELETE *`, `/api/test/*`(브라우저에서는 금지). 프론트는 외부 리소스(폰트·CDN·분석 스크립트)를 쓰지 않고, WebSocket·SSE·서비스 워커·응답 압축도 없다. 화면과 API는 같은 origin이다.
+
+### 4.2 엔진 쪽에 필요한 변경 (검증으로 확인된 차단 지점)
+
+1. **예상된 4xx 응답을 실행 오류로 취급하지 않기.** 비로그인 상태의 첫 화면은 `GET /api/auth/me` → 401을 정상적으로 받는다(`src/stores/session.js`). 현재 엔진은 400 이상 응답을 모두 `HTTP_ERROR`로 막아서, 로그인이 필요 없는 B03·N01도 첫 단계에서 `inconclusive`가 된다. 수정 후 버전의 B01은 두 번째 쿠폰 적용에 409 `COUPON_ALREADY_APPLIED`를 받는 것이 정상이므로 재검증에도 필요하다. 허용 목록 예: `GET /api/auth/me` 401, `POST /api/cart/coupons` 409, `POST /api/auth/login` 401(실패 시나리오 한정).
+2. **메서드 상한 확장.** `policy.py`의 GET/HEAD/OPTIONS 전역 상한 때문에 `RunPolicy(allowed_methods=('GET','POST'))`도 예외가 난다. 4.1의 메서드+경로 단위 허용이 필요하다.
+3. **요청 본문·헤더·쿠키 전달.** 현재 전송 모듈은 URL과 메서드만 넘기고 요청 본문·`Content-Type`·`Cookie`를 전달하지 않으며, 응답의 `Set-Cookie`를 제거한다. 메서드만 허용해서는 로그인이 성립하지 않는다. 필요한 것: JSON 본문과 `Content-Type: application/json` 전달, 시도(BrowserContext)별 세션 쿠키 왕복. 로그인 우회(쿠키 주입)로 대신하지 않는다.
+4. **요청 예산.** 로그인 → 상품 → 장바구니를 페이지 이동으로 수행하는 B01은 시도당 약 33개, 두 시도 66개 요청을 보낸다(Node Playwright 실측). 엔진 기본값(분당 20, 전체 60)으로는 부족하다. 실측에 맞춰 명시 예산을 승인한다.
+5. **구조화된 관찰.** B03의 카드 개수·API `items` 길이, N01의 `disabled` 여부를 보고서 근거로 남기려면 텍스트 비교 외의 관찰값(개수, 불리언 속성, 응답 필드)이 필요하다.
 
 ## 5. 시나리오별 기준 단계
 
@@ -87,7 +97,11 @@ selector는 [기능 명세서 7장](./FUNCTIONAL_SPEC.md#7-자동화용-selector
 3. 관찰: `[tid=add-to-cart]`의 `disabled` 속성과 텍스트 `품절`, `[tid=sold-out-badge]` = `품절`, `[tid=stock-status]` = `품절`
 4. 기대(정책 5.4): 비활성화가 정상. "버튼이 안 눌린다"는 현상은 재현되지만 정책상 정상 동작(`expected_behavior`)이다.
 
-주의: 비활성 버튼을 click 하면 Playwright는 활성화를 기다리다 시간 초과된다. N01은 click 대신 `disabled` 속성으로 관찰해야 한다. 현재 Core_engine 계획 동작(`navigate`, `click`, `fill`, `assert_text`)에는 속성 확인이 없으므로 엔진 쪽에 `assert_disabled` 같은 관찰 동작 추가가 필요하다.
+주의: 비활성 버튼을 click 하면 Playwright는 활성화를 기다리다 시간 초과된다. N01은 click 대신 `disabled` 속성으로 관찰한다. 현재 엔진에서도 `[data-testid="add-to-cart"][disabled]` 선택자 + 텍스트 `품절`로 존재 여부는 확인할 수 있다. 다만 속성이 없을 때 명확한 false가 아니라 선택자 실패(inconclusive)가 되므로, 엔진에 불리언 관찰(예: `assert_disabled`)을 추가하는 편이 판정에 적합하다.
+
+### 금액 비교 기준
+- B01은 **최종 금액(`cart-total`, API `total`)**을 비교한다. 상품 합계(`subtotal`)는 30,000원으로 변하지 않는다.
+- B02는 **상품 합계(`cart-subtotal`, API `subtotal`)**를 비교한다.
 
 ## 6. 실행 명령 (BugLab-shop)
 
