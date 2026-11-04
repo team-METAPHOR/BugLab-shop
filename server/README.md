@@ -48,6 +48,7 @@ npm --prefix server run start:prod
 | `TEST_CONTROL_TOKEN` | 없음 | dev 필수. `/api/test/reset`의 `X-Test-Token` |
 | `TEST_ACCOUNT_PASSWORD` | 없음 | dev 필수. `qa1@buglab.test`, `qa2@buglab.test` 비밀번호 |
 | `DEMO_ACCOUNT_EMAIL` / `DEMO_ACCOUNT_PASSWORD` | 없음 | production 선택. 둘 다 있으면 데모 계정 시드 |
+| `METAPHOR_SDK_URL` / `METAPHOR_API_URL` / `METAPHOR_PROJECT_KEY` | 없음 | production 선택. 셋 다 있으면 index.html에 메타포 SDK 태그 삽입 + CSP 허용. dev에서는 무시 |
 
 dev에서 `TEST_CONTROL_TOKEN` 또는 `TEST_ACCOUNT_PASSWORD`가 없으면 서버는 시작하지 않고 종료 코드 1로 끝난다.
 
