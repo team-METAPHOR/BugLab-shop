@@ -1,6 +1,14 @@
+<script setup>
+import AppHeader from './components/AppHeader.vue'
+import AppFooter from './components/AppFooter.vue'
+</script>
+
 <template>
-  <main>
-    <h1>BugLab Shop</h1>
-    <p>Vue 개발을 시작할 준비가 되었습니다.</p>
-  </main>
+  <div class="app-shell">
+    <AppHeader />
+    <main class="page">
+      <RouterView />
+    </main>
+    <AppFooter />
+  </div>
 </template>

@@ -1,0 +1,4 @@
+data/
+node_modules/
+# 루트 .gitignore의 `.env.*` 규칙이 예시 파일까지 무시하므로 예시 파일만 다시 포함한다.
+!.env.*.example

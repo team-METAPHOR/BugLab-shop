@@ -1,0 +1,18 @@
+{
+  "name": "buglab-shop-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env.dev src/index.js",
+    "start:dev": "node --env-file-if-exists=.env.dev src/index.js",
+    "start:prod": "node --env-file-if-exists=.env.production src/index.js",
+    "reset:prod-demo": "node --env-file-if-exists=.env.production scripts/reset-prod-demo.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
