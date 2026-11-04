@@ -167,6 +167,7 @@
 - `index.html`은 `Cache-Control: no-cache`, `/assets/*`는 장기 캐시 가능.
 - 보안 헤더: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`,
   `Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'`.
+- production에서 메타포 SDK가 켜져 있으면 `index.html`에 SDK 스크립트 태그를 넣고 CSP에 SDK·API origin을 추가한다. 자세한 내용은 [기능 명세서 9장](./FUNCTIONAL_SPEC.md#9-메타포-sdk-연동).
 
 ## 6. 서버 환경변수
 
@@ -183,3 +184,6 @@
 | `TEST_CONTROL_TOKEN` | 없음 | dev 필수. 없으면 dev 서버 시작 실패 |
 | `TEST_ACCOUNT_PASSWORD` | 없음 | dev 필수. `qa1`/`qa2` 시드 비밀번호 |
 | `DEMO_ACCOUNT_EMAIL` / `DEMO_ACCOUNT_PASSWORD` | 없음 | production 선택. 둘 다 있으면 발표용 계정 시드 |
+| `METAPHOR_SDK_URL` | 없음 | production 선택. 메타포 SDK 스크립트 URL (http/https) |
+| `METAPHOR_API_URL` | 없음 | production 선택. SDK가 신고를 보내는 메타포 API base URL |
+| `METAPHOR_PROJECT_KEY` | 없음 | production 선택. 공개 프로젝트 키(영문·숫자·`_`·`-`, 1–128자). 세 SDK 값은 모두 있거나 모두 없어야 함. dev에서는 무시 |

@@ -22,6 +22,7 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 | 세션 쿠키 이름 | `buglab_sid` | `buglab_dev_sid` |
 | DB 파일 | `server/data/production.db` | `server/data/dev.db` |
 | CAPTCHA·OTP·팝업·외부 결제 | 없음 | 없음 |
+| 메타포 SDK (`METAPHOR_SDK_*`) | 설정하면 켜짐 | 항상 꺼짐 (설정해도 무시) |
 
 - 두 환경 모두 `npm run build`로 만든 정적 파일을 백엔드 서버가 같은 origin에서 서빙한다. 화면과 API가 같은 origin이어야 엔진의 단일 origin 정책을 통과한다.
 - Vite 개발 서버(`npm run dev`, 5173)는 코드 작성용이다. HMR WebSocket이 열리므로 Playwright 대상으로 쓰지 않는다.
@@ -174,6 +175,31 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 - dev의 시도별 초기화는 `POST /api/test/reset`(테스트 계정 하나 단위)으로 한다. 다른 계정의 상태는 건드리지 않는다. 자세한 내용은 [Playwright 실행 계약](./PLAYWRIGHT_CONTRACT.md).
 - 운영 환경의 사용자는 장바구니에서 직접 상품을 삭제해 초기 상태로 돌아갈 수 있다. 발표 전 운영 데모 계정 초기화는 `server` 스크립트로 한다(`npm --prefix server run reset:prod-demo`).
 
-## 9. 범위 밖
+## 9. 메타포 SDK 연동
+
+메타포 JavaScript SDK는 사용자가 반응 없는 요소를 연타(레이지클릭)하거나 눌러도 아무 변화가 없을 때(데드클릭) 신고 안내를 띄운다. 쇼핑몰은 고객사 사이트 역할로 SDK를 HTML에 넣기만 한다. SDK 자체는 메타포 플랫폼(Metaphor-front) 범위다.
+
+### 9.1 켜는 환경
+- **production에서만 켠다.** `METAPHOR_SDK_URL`, `METAPHOR_API_URL`, `METAPHOR_PROJECT_KEY` 세 값이 모두 있어야 켜지고, 일부만 있으면 서버가 시작하지 않는다.
+- **dev에서는 항상 끈다.** 설정이 있어도 경고만 남기고 무시한다. 이유:
+  1. 엔진이 재현하며 누르는 클릭을 SDK가 다시 신고로 올리면 안 된다.
+  2. SDK가 다른 origin으로 요청을 보내면 엔진의 단일 origin 정책에 막혀 판정이 inconclusive가 된다.
+
+### 9.2 서버가 하는 일 (production, SDK 켬)
+- `index.html`을 보낼 때 `</head>` 앞에 다음 태그를 넣는다. 속성 값은 HTML 이스케이프한다.
+  ```html
+  <script src="{METAPHOR_SDK_URL}" data-metaphor-project-key="{METAPHOR_PROJECT_KEY}" data-metaphor-api-base="{METAPHOR_API_URL}" defer></script>
+  ```
+- CSP에 SDK 스크립트 origin을 `script-src`·`style-src`·`img-src`에, API origin을 `connect-src`에 추가한다. 그 외 origin은 허용하지 않는다. SDK가 iframe을 쓰게 되면 `frame-src`를 추가해야 한다.
+- 프로젝트 키는 브라우저에 노출되는 공개 키다. 비밀값을 넣지 않는다.
+
+### 9.3 SDK 쪽 요구 (플랫폼 팀 참고)
+- **비활성 버튼 연타는 `click`으로 잡히지 않는다.** 2026-11-04 Playwright 실측(Chromium 156, WebKit 27.2, Firefox 157)에서 `disabled` 버튼(N01 품절 버튼)을 4번 눌렀을 때 `document` 캡처 리스너에 `pointerdown`·`pointerup`은 4번씩 도달했다. `mousedown`·`mouseup`·`click`은 0번이었다. 감지는 **`document`의 캡처 단계 `pointerdown`**으로 해야 한다. `event.target`은 비활성 버튼 자체로 확인됐다.
+- 같은 실측에서 시험용 스텁 SDK(레이지: 1초 안에 반경 30px 이내 3회, 데드: 1초 동안 DOM·주소 변화 없음)가 세 브라우저 모두에서 N01의 레이지클릭을, Chromium에서 단일 클릭의 데드클릭을 감지했다. 신고 요청은 CSP 오류 없이 API origin에 도달했다. 실제 SDK의 임계값은 플랫폼 팀이 정한다.
+- API는 쇼핑몰 origin을 CORS로 허용해야 한다(등록된 프로젝트의 origin만).
+- 비밀번호 입력란 등 민감한 값은 기록·스크린샷에서 지우고 보낸다.
+- 시나리오별 적합도: N01은 자동 감지가 자연스럽다. B01·B02·B03은 클릭 패턴 문제가 아니어서 직접 신고 버튼이 필요하다.
+
+## 10. 범위 밖
 
 주문·결제, 주문 목록, 주문 IDOR 시나리오, 비밀번호 찾기, 소셜 로그인, 모바일 전용 레이아웃(깨지지 않는 정도만 유지).

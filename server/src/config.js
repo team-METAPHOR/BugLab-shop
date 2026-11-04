@@ -17,6 +17,52 @@ function parseBool(value, fallback) {
   return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 }
 
+function parseHttpUrl(name, value) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new ConfigError(`${name} 값이 올바른 URL이 아닙니다.`);
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new ConfigError(`${name}는 http 또는 https URL이어야 합니다.`);
+  }
+  return url;
+}
+
+// 메타포 JavaScript SDK 설정. production에서만 켠다.
+// dev는 엔진 재현 대상이므로 SDK가 재현 클릭을 다시 신고하거나 다른 origin으로 요청을 보내면 안 된다.
+function loadMetaphorSdk(env, isDev) {
+  const scriptRaw = nonEmpty(env.METAPHOR_SDK_URL);
+  const apiRaw = nonEmpty(env.METAPHOR_API_URL);
+  const projectKey = nonEmpty(env.METAPHOR_PROJECT_KEY)?.trim();
+  if (!scriptRaw && !apiRaw && !projectKey) return undefined;
+  if (isDev) {
+    console.warn('[buglab-shop] APP_ENV=dev에서는 METAPHOR_SDK_* 설정을 무시합니다(SDK 비활성).');
+    return undefined;
+  }
+  const missing = [
+    !scriptRaw && 'METAPHOR_SDK_URL',
+    !apiRaw && 'METAPHOR_API_URL',
+    !projectKey && 'METAPHOR_PROJECT_KEY',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    throw new ConfigError(`메타포 SDK를 켜려면 ${missing.join(', ')} 환경변수도 필요합니다.`);
+  }
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(projectKey)) {
+    throw new ConfigError('METAPHOR_PROJECT_KEY는 영문·숫자·_·- 1~128자여야 합니다.');
+  }
+  const scriptUrl = parseHttpUrl('METAPHOR_SDK_URL', scriptRaw);
+  const apiUrl = parseHttpUrl('METAPHOR_API_URL', apiRaw);
+  return Object.freeze({
+    scriptUrl: scriptUrl.href,
+    scriptOrigin: scriptUrl.origin,
+    apiUrl: apiUrl.href.replace(/\/$/, ''),
+    apiOrigin: apiUrl.origin,
+    projectKey,
+  });
+}
+
 export function resolveDataDir(env = process.env) {
   const dir = nonEmpty(env.DATA_DIR);
   return dir ? path.resolve(dir) : path.join(SERVER_DIR, 'data');
@@ -74,5 +120,6 @@ export function loadConfig(env = process.env) {
       !isDev && demoEmail && demoPassword
         ? { email: demoEmail.trim().toLowerCase(), password: demoPassword }
         : undefined,
+    metaphorSdk: loadMetaphorSdk(env, isDev),
   });
 }

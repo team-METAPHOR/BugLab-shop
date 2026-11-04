@@ -75,6 +75,9 @@ function main() {
     );
     if (config.isDev) console.log(`[buglab-shop] 테스트 계정 시드: ${TEST_ACCOUNTS.map((a) => a.email).join(', ')}`);
     else if (config.demoAccount) console.log(`[buglab-shop] 데모 계정 시드: ${config.demoAccount.email}`);
+    console.log(
+      `[buglab-shop] metaphor sdk=${config.metaphorSdk ? `on (${config.metaphorSdk.scriptOrigin} → ${config.metaphorSdk.apiOrigin})` : 'off'}`,
+    );
   });
   server.on('error', (err) => {
     console.error(`[buglab-shop] 서버 시작 실패: ${err.message}`);

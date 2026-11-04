@@ -9,13 +9,34 @@ import { healthRouter } from './routes/health.js';
 import { productsRouter } from './routes/products.js';
 import { testRouter } from './routes/test.js';
 
-const SECURITY_HEADERS = {
+const BASE_SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'same-origin',
-  'Content-Security-Policy':
-    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'",
 };
+
+// SDK가 켜져 있으면 SDK 스크립트 origin(스크립트·스타일·이미지)과 메타포 API origin(신고 전송)만 추가로 허용한다.
+function contentSecurityPolicy(sdk) {
+  const scriptSrc = ["'self'", sdk?.scriptOrigin].filter(Boolean).join(' ');
+  const styleSrc = ["'self'", "'unsafe-inline'", sdk?.scriptOrigin].filter(Boolean).join(' ');
+  const imgSrc = ["'self'", 'data:', sdk?.scriptOrigin].filter(Boolean).join(' ');
+  const connectSrc = ["'self'", sdk?.apiOrigin].filter(Boolean).join(' ');
+  return (
+    `default-src 'self'; img-src ${imgSrc}; style-src ${styleSrc}; script-src ${scriptSrc}; ` +
+    `connect-src ${connectSrc}; frame-ancestors 'none'`
+  );
+}
+
+function escapeAttr(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function sdkScriptTag(sdk) {
+  return (
+    `<script src="${escapeAttr(sdk.scriptUrl)}" data-metaphor-project-key="${escapeAttr(sdk.projectKey)}" ` +
+    `data-metaphor-api-base="${escapeAttr(sdk.apiUrl)}" defer></script>`
+  );
+}
 
 const NO_DIST_MESSAGE =
   '프론트엔드 빌드 결과물이 없습니다. 저장소 루트에서 `npm run build`를 실행한 뒤 서버를 다시 확인해 주세요. (/api 는 정상 동작합니다)\n';
@@ -47,7 +68,7 @@ function apiRouter({ db, config, commit, startedAt }) {
   return api;
 }
 
-function staticSite(staticDir) {
+function staticSite(staticDir, sdk) {
   const indexPath = path.join(staticDir, 'index.html');
   const serveFiles = express.static(staticDir, {
     index: false,
@@ -55,23 +76,34 @@ function staticSite(staticDir) {
     dotfiles: 'ignore',
     setHeaders(res, filePath) {
       const rel = path.relative(staticDir, filePath).split(path.sep).join('/');
-      if (rel === 'index.html') res.setHeader('Cache-Control', 'no-cache');
-      else if (rel.startsWith('assets/')) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      if (rel.startsWith('assets/')) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       else res.setHeader('Cache-Control', 'public, max-age=0');
     },
   });
 
-  const router = express.Router();
-  router.use((req, res, next) => (req.method === 'GET' || req.method === 'HEAD' ? next() : next('router')));
-  router.use(serveFiles);
-  router.use((req, res) => {
+  // index.html은 항상 이 함수로 보낸다. SDK가 켜져 있으면 </head> 앞에 SDK 스크립트 태그를 넣는다.
+  function sendIndex(req, res) {
     if (!fs.existsSync(indexPath)) {
       res.status(503).type('text/plain; charset=utf-8').send(NO_DIST_MESSAGE);
       return;
     }
     res.setHeader('Cache-Control', 'no-cache');
-    res.sendFile(indexPath);
-  });
+    if (!sdk) {
+      res.sendFile(indexPath);
+      return;
+    }
+    const html = fs.readFileSync(indexPath, 'utf8');
+    const injected = html.includes('</head>')
+      ? html.replace('</head>', `    ${sdkScriptTag(sdk)}\n  </head>`)
+      : `${sdkScriptTag(sdk)}\n${html}`;
+    res.type('text/html; charset=utf-8').send(injected);
+  }
+
+  const router = express.Router();
+  router.use((req, res, next) => (req.method === 'GET' || req.method === 'HEAD' ? next() : next('router')));
+  router.get('/index.html', sendIndex);
+  router.use(serveFiles);
+  router.use(sendIndex);
   return router;
 }
 
@@ -103,12 +135,13 @@ export function createApp({ db, config, commit, startedAt }) {
   app.set('query parser', 'simple');
 
   app.use(accessLog);
+  const securityHeaders = { ...BASE_SECURITY_HEADERS, 'Content-Security-Policy': contentSecurityPolicy(config.metaphorSdk) };
   app.use((req, res, next) => {
-    res.set(SECURITY_HEADERS);
+    res.set(securityHeaders);
     next();
   });
   app.use('/api', apiRouter({ db, config, commit, startedAt }));
-  app.use(staticSite(config.staticDir));
+  app.use(staticSite(config.staticDir, config.metaphorSdk));
   app.use((req, res) => {
     res.status(404).type('text/plain; charset=utf-8').send('Not Found\n');
   });

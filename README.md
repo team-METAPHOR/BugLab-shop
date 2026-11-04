@@ -62,6 +62,10 @@ dev는 `TEST_CONTROL_TOKEN`, `TEST_ACCOUNT_PASSWORD`가 없으면 시작하지 �
 - production 발표용 계정: `npm --prefix server run reset:prod-demo`
 - 전체 초기화: 서버를 멈추고 `server/data/{env}.db`를 지운 뒤 다시 시작
 
+## 메타포 SDK
+
+production에서 `server/.env.production`에 `METAPHOR_SDK_URL`, `METAPHOR_API_URL`, `METAPHOR_PROJECT_KEY`를 넣으면 서버가 `index.html`에 SDK 스크립트를 넣고 CSP에 두 origin을 허용합니다. dev에서는 설정이 있어도 SDK를 넣지 않습니다(엔진 재현과 충돌 방지). 자세한 내용은 [기능 명세서 9장](docs/FUNCTIONAL_SPEC.md#9-메타포-sdk-연동).
+
 ## 알려진 제약
 
 - 장바구니는 서버 DB에 사용자별로 저장됩니다. 새로고침·재로그인 후에도 유지됩니다.
