@@ -7,7 +7,7 @@ import { won } from '../utils/format.js'
 import { PHOTO_NOTES, PRODUCT_SPECS } from '../data/productSpecs.js'
 import AppIcon from '../components/AppIcon.vue'
 import ProductCard from '../components/ProductCard.vue'
-import { favorites, isFavorite, loadFavorites, toggleFavorite } from '../stores/favorites.js'
+import { favorites, isFavorite, loadFavorites } from '../stores/favorites.js'
 import { openDelivery } from '../stores/delivery.js'
 import ActionNotice from '../components/ActionNotice.vue'
 import { useActionNotice } from '../composables/useActionNotice.js'
@@ -90,14 +90,15 @@ async function addToCart() {
 
 watch(() => session.user?.id, (id) => { if (id) loadFavorites().catch(() => {}) }, { immediate: true })
 
-async function changeFavorite() {
+function changeFavorite() {
   if (!session.user) { goLogin(); return }
-  await toggleFavorite(product.value)
+  // INJECTED DEFECT B05: 상세의 찜 버튼은 확인 뒤 실제 토글 처리를 호출하지 않는다.
   announceFavorite('찜 상태 확인 완료')
 }
 
 function openRestock() {
-  restockDialog.value?.showModal()
+  // INJECTED DEFECT B03: DOM 요소 대신 ref 객체에 open을 써서 신청창이 열리지 않는다.
+  restockDialog.open = true
   announceRestock('재입고 알림 안내 확인 완료')
 }
 

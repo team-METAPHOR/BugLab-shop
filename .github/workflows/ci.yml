@@ -19,6 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # main is the demo site and evaluation target A, so it must keep every injected defect.
+      # The fixed control lives only on eval/* branches; merging one into main fails here.
+      - name: Keep the demo defects on main
+        if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
+        run: |
+          missing=""
+          for id in B01 B02 B03 B04 B05 B06; do
+            grep -rq "INJECTED DEFECT $id" src || missing="$missing $id"
+          done
+          [ -z "$missing" ] || { echo "Demo defects missing on main:$missing (eval/* branches must not be merged)"; exit 1; }
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22

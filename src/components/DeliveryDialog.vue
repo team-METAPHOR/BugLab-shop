@@ -13,7 +13,7 @@ const { notice: closeNotice, announce: announceClose, clear: clearClose } = useA
 let previousOverflow = ''
 
 function requestClose() {
-  closeDelivery()
+  // INJECTED DEFECT B06: 상품과 무관하게 버튼의 닫기 요청을 확인만 하고 팝업을 유지한다.
   announceClose('닫기 요청 확인 완료')
 }
 
