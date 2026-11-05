@@ -17,8 +17,9 @@ function parseBool(value, fallback) {
   return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 }
 
+// The verifier compares the trimmed body, so serve the trimmed token (no stray newline).
 function loadVerificationToken(value) {
-  const token = nonEmpty(value);
+  const token = nonEmpty(value)?.trim();
   if (token !== undefined && Buffer.byteLength(token, 'utf8') > 1024) {
     throw new ConfigError('METAPHOR_VERIFY_TOKEN은 UTF-8 기준 1KB 이하여야 합니다.');
   }
