@@ -9,6 +9,7 @@ const router = useRouter()
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const reportConsent = ref(false)
 const submitting = ref(false)
 const errorMessage = ref('')
 
@@ -17,7 +18,7 @@ async function submit() {
   submitting.value = true
   errorMessage.value = ''
   try {
-    await signup(name.value.trim(), email.value.trim(), password.value)
+    await signup(name.value.trim(), email.value.trim(), password.value, reportConsent.value)
     router.replace(safeNext(route.query.next))
   } catch (error) {
     errorMessage.value = error.message
@@ -53,6 +54,14 @@ async function submit() {
             minlength="8"
             required
           />
+        </label>
+
+        <label class="consent">
+          <input v-model="reportConsent" data-testid="signup-report-consent" type="checkbox" name="reportConsent" />
+          <span>
+            (선택) 버그 신고 시 브라우저 환경 정보와 민감한 정보를 가린 화면 캡처 전송에 동의합니다.
+            동의하면 신고할 때마다 다시 묻지 않습니다.
+          </span>
         </label>
 
         <p v-if="errorMessage" class="notice notice--error" data-testid="signup-error" role="alert">{{ errorMessage }}</p>

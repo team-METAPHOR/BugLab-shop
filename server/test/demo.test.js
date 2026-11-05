@@ -92,7 +92,7 @@ test('reset clears only the selected account cart, coupons, favorites and sessio
     assert.deepEqual(await invalid.json(), { user: null });
     const signedIn = await currentUser(firstSession);
     assert.equal(signedIn.status, 200);
-    assert.deepEqual(await signedIn.json(), { user: { id: 1, email: 'qa1@buglab.test', name: 'QA 1' } });
+    assert.deepEqual(await signedIn.json(), { user: { id: 1, email: 'qa1@buglab.test', name: 'QA 1', reportConsent: false } });
     assert.equal((await fetch(`${origin}/api/cart/unknown`)).status, 404);
     assert.equal((await fetch(`${origin}/api/cart`)).status, 401);
     assert.equal((await fetch(`${origin}/api/favorites`)).status, 401);

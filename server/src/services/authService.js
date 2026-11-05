@@ -8,7 +8,7 @@ const MAX_FAILURES = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function toUser(row) {
-  return { id: row.id, email: row.email, name: row.name };
+  return { id: row.id, email: row.email, name: row.name, reportConsent: row.report_consent === 1 };
 }
 
 function hashToken(token) {
@@ -34,17 +34,20 @@ export function validateSignup(body) {
   if (password.length < 8 || password.length > 128) {
     throw validationError('비밀번호는 8자 이상 128자 이하로 입력해 주세요.');
   }
-  return { name, email, password };
+  // 선택 동의: 버그 신고 때 브라우저 환경 정보·마스킹된 스크린샷 전송. true만 동의로 본다.
+  return { name, email, password, reportConsent: body?.reportConsent === true };
 }
 
 export async function signup(db, input) {
-  const { name, email, password } = validateSignup(input);
+  const { name, email, password, reportConsent } = validateSignup(input);
   if (findUserByEmail(db, email)) throw new ApiError(409, 'EMAIL_TAKEN');
   const passwordHash = await hashPassword(password);
   try {
     const result = db
-      .prepare('INSERT INTO users (email, name, password_hash, is_test_account, created_at) VALUES (?, ?, ?, 0, ?)')
-      .run(email, name, passwordHash, Date.now());
+      .prepare(
+        'INSERT INTO users (email, name, password_hash, is_test_account, report_consent, created_at) VALUES (?, ?, ?, 0, ?, ?)',
+      )
+      .run(email, name, passwordHash, reportConsent ? 1 : 0, Date.now());
     return db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
   } catch (err) {
     // 해시 계산 중 같은 이메일이 먼저 가입된 경우

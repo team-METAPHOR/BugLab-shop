@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   is_test_account INTEGER NOT NULL DEFAULT 0,
+  report_consent INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL
 );
 
@@ -142,6 +143,10 @@ export function openDatabase(dbPath) {
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec('PRAGMA busy_timeout = 5000;');
   db.exec(SCHEMA);
+  // 이 컬럼이 생기기 전에 만든 DB 파일에는 컬럼을 추가한다.
+  if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'report_consent')) {
+    db.exec('ALTER TABLE users ADD COLUMN report_consent INTEGER NOT NULL DEFAULT 0');
+  }
   return db;
 }
 

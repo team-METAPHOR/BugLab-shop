@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, watchEffect } from 'vue'
 import { api, ApiError } from '../api/client.js'
 
 export const session = reactive({
@@ -8,6 +8,12 @@ export const session = reactive({
 })
 
 let loading = null
+
+// 가입 때 받은 신고용 정보 전송 동의를 메타포 SDK에 알린다. SDK는 신고 창을 열 때마다 이 값을 읽는다.
+watchEffect(() => {
+  if (session.user?.reportConsent) window.metaphorConsent = { environment: true, screenshot: true }
+  else delete window.metaphorConsent
+})
 
 export function ensureSessionLoaded() {
   if (session.loaded) return Promise.resolve()
@@ -52,8 +58,8 @@ export async function login(email, password) {
   await refreshCartCount()
 }
 
-export async function signup(name, email, password) {
-  const data = await api.post('/api/auth/signup', { name, email, password })
+export async function signup(name, email, password, reportConsent = false) {
+  const data = await api.post('/api/auth/signup', { name, email, password, reportConsent })
   session.user = data.user
   session.loaded = true
   session.cartCount = 0
