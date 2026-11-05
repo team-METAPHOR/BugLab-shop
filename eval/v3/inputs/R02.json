@@ -1,0 +1,19 @@
+{
+  "id": "R02",
+  "report": {
+    "text": "저소음 마우스를 1개 담고 장바구니에서 수량 '+' 버튼을 눌렀는데 '수량 확인 완료'만 나오고 수량이 계속 1개예요. 금액도 안 바뀌어요.",
+    "page_path": "/cart",
+    "screenshot": "screenshots/R02.png",
+    "reported_on": "production"
+  },
+  "expected_behavior": "장바구니 수량 범위는 1~min(10, 재고)이며, 수량을 늘리면 상품 합계가 즉시 다시 계산된다. (기능 명세서 5.1)",
+  "test_data": {
+    "product": {
+      "id": 2,
+      "name": "BugLab 저소음 마우스",
+      "price": 18000
+    },
+    "quantity_before": 1
+  },
+  "login_required": true
+}

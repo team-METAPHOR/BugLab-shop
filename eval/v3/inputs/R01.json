@@ -1,0 +1,20 @@
+{
+  "id": "R01",
+  "report": {
+    "text": "무선 키보드를 장바구니에 담고 장바구니에서 쿠폰 코드 SAVE5000을 입력한 다음 '쿠폰 적용'을 눌렀어요. '쿠폰 확인 완료'라고는 나오는데 할인이 안 되고 최종 금액이 30,000원 그대로예요.",
+    "page_path": "/cart",
+    "screenshot": "screenshots/R01.png",
+    "reported_on": "production"
+  },
+  "expected_behavior": "쿠폰 SAVE5000은 정액 5,000원 할인이며 최소 주문 금액이 없다. 같은 쿠폰은 한 장바구니에 한 번만 적용된다. (기능 명세서 5.2)",
+  "test_data": {
+    "product": {
+      "id": 1,
+      "name": "BugLab 무선 키보드",
+      "price": 30000
+    },
+    "quantity": 1,
+    "coupon_code": "SAVE5000"
+  },
+  "login_required": true
+}
