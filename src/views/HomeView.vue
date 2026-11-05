@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { api } from '../api/client.js'
+import { useRoute, useRouter } from 'vue-router'
+import { api, ApiError } from '../api/client.js'
+import { clearSession, session, setCartCount } from '../stores/session.js'
 import ProductCard from '../components/ProductCard.vue'
 import HeroCarousel from '../components/HeroCarousel.vue'
 import AppIcon from '../components/AppIcon.vue'
@@ -9,6 +10,10 @@ import { vReveal } from '../directives/reveal.js'
 import { BENEFITS, CATEGORY_SHORTCUTS, HERO_SLIDES, SETUP_GUIDE, SUGGESTED_KEYWORDS } from '../data/storefront.js'
 
 const route = useRoute()
+const router = useRouter()
+const quickAddPending = ref(0)
+const quickAddMessage = ref('')
+let quickAddQueue = Promise.resolve()
 const products = ref([])
 const summary = ref(null)
 const status = ref('loading') // loading | ready | error
@@ -41,10 +46,7 @@ async function load(q) {
     const data = await api.get(path)
     if (seq !== requestSeq) return
     summary.value = q ? { query: q, count: data.items.length } : null
-    // INJECTED DEFECT B03
-    if (data.items.length > 0) {
-      products.value = data.items
-    }
+    products.value = data.items
     status.value = 'ready'
   } catch (error) {
     if (seq !== requestSeq) return
@@ -54,6 +56,34 @@ async function load(q) {
 }
 
 watch(query, (q) => load(q), { immediate: true })
+
+function quickAdd(product) {
+  if (!session.user) {
+    router.push({ path: '/login', query: { next: route.fullPath } })
+    return
+  }
+  quickAddPending.value++
+  quickAddMessage.value = ''
+  const userId = session.user.id
+  // 같은 클릭에서 전달된 작업도 순서대로 완료해 배지와 서버 수량을 일치시킨다.
+  quickAddQueue = quickAddQueue.then(async () => {
+    try {
+      if (session.user?.id !== userId) return
+      const cart = await api.post('/api/cart/items', { productId: product.id, quantity: 1 })
+      if (session.user?.id !== userId) return
+      setCartCount(cart)
+      quickAddMessage.value = '장바구니에 담았습니다.'
+    } catch (error) {
+      quickAddMessage.value = error.message
+      if (error instanceof ApiError && error.status === 401) {
+        clearSession()
+        router.push({ path: '/login', query: { next: route.fullPath } })
+      }
+    } finally {
+      quickAddPending.value--
+    }
+  })
+}
 
 // 쿠폰 코드 복사. 클립보드를 못 쓰는 환경(비보안 origin 등)에서는 코드를 선택해 두고 직접 복사하도록 안내한다.
 const couponCodeEl = ref(null)
@@ -154,8 +184,13 @@ function scrollToCatalog() {
       <p v-if="status === 'error'" class="notice notice--error" role="alert">{{ errorMessage }}</p>
 
       <ul class="product-grid" data-testid="search-results">
-        <ProductCard v-for="(product, index) in sortedProducts" :key="product.id" :product="product" :index="index" />
+        <ProductCard v-for="(product, index) in sortedProducts" :key="product.id" :product="product" :index="index"
+          :quick-add="Boolean(query)" :busy="quickAddPending > 0" @quick-add="quickAdd" />
       </ul>
+      <div v-if="query && quickAddMessage" class="quick-add-result" aria-live="polite">
+        <p data-testid="quick-add-message">{{ quickAddMessage }}</p>
+        <RouterLink to="/cart" class="text-link" data-testid="quick-add-go-to-cart">장바구니로 이동</RouterLink>
+      </div>
 
       <div v-if="status === 'loading' && products.length === 0" class="product-grid product-grid--skeleton" aria-hidden="true">
         <div v-for="n in 6" :key="n" class="skeleton-card">

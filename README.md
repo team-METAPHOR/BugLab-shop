@@ -52,13 +52,15 @@ dev는 `TEST_CONTROL_TOKEN`, `TEST_ACCOUNT_PASSWORD`가 없으면 시작하지 �
 ## 데모 데이터
 
 - 상품 6개(고정). 시연 기준 상품: `BugLab 무선 키보드` 30,000원(id 1), 품절 상품 `BugLab 기계식 키보드 한정판`(id 3)
+- 대표 결함은 상품당 1개씩 총 6개입니다. 쿠폰 새로고침·마우스 수량 감소·추천 상세 상태·검색 빠른 담기·찜 복원·배송 팝업 이탈 동선을 사용합니다. 팀 전용 정답표는 `docs/INJECTED_DEFECTS.md`에 있습니다.
+- 빈 검색 결과는 정상 처리됩니다. 찜 목록(`/favorites`), 검색 결과 빠른 담기, 추천상품 이동, 배송 안내 팝업이 있습니다.
 - 쿠폰: `SAVE5000` (5,000원 할인, 한 장바구니에 한 번)
 - dev 테스트 계정: `qa1@buglab.test`, `qa2@buglab.test` (비밀번호 = `TEST_ACCOUNT_PASSWORD`)
 - production 발표용 계정: `DEMO_ACCOUNT_EMAIL` / `DEMO_ACCOUNT_PASSWORD`를 설정하면 시드
 
 ## 초기화
 
-- dev, 시도별: `POST /api/test/reset` + `X-Test-Token` 헤더 (계정 하나 단위). [Playwright 실행 계약](docs/PLAYWRIGHT_CONTRACT.md#3-시도별-초기화) 참고.
+- dev, 시도별: `POST /api/test/reset` + `X-Test-Token` 헤더 (계정 하나의 장바구니·쿠폰·찜·세션 초기화). [Playwright 실행 계약](docs/PLAYWRIGHT_CONTRACT.md#3-시도별-초기화) 참고.
 - production 발표용 계정: `npm --prefix server run reset:prod-demo`
 - 전체 초기화: 서버를 멈추고 `server/data/{env}.db`를 지운 뒤 다시 시작
 
@@ -70,5 +72,13 @@ production에서 `server/.env.production`에 `METAPHOR_SDK_URL`, `METAPHOR_API_U
 
 - 장바구니는 서버 DB에 사용자별로 저장됩니다. 새로고침·재로그인 후에도 유지됩니다.
 - localhost에서는 쿠키가 포트를 구분하지 않으므로 환경별 쿠키 이름이 다릅니다(`buglab_sid`, `buglab_dev_sid`).
-- 현재 Core_engine은 GET/HEAD/OPTIONS만 허용합니다. 로그인·장바구니 조작을 재현하려면 엔진에 경로 단위 POST/PATCH 허용과 `disabled` 속성 관찰이 추가되어야 합니다. 목록은 [Playwright 실행 계약 4장](docs/PLAYWRIGHT_CONTRACT.md#4-엔진-요청-허용-범위).
+- Core_engine 연동은 별도 확인이 필요합니다. 로그인·장바구니·찜에는 쿠키·본문 전달, 경로 단위 POST/PATCH/DELETE 허용, 새로고침·뒤로 가기·구조화된 상태 관찰이 필요합니다. [실행 계약](docs/PLAYWRIGHT_CONTRACT.md#4-엔진-요청-허용-범위)을 참고하세요. 이 저장소의 브라우저 검증 통과가 실제 엔진 통합 통과를 뜻하지는 않습니다.
 - 주문·결제는 없습니다.
+
+## 검증
+
+서버 회귀 검사는 `npm --prefix server test`로 실행합니다.
+`npm run build` 후 Python Playwright가 설치된 환경에서 `python tests/demo_browser.py --repeat 2`를 실행합니다.
+임시 dev·production DB와 테스트 계정을 사용하며 기존 DB·환경변수 파일을 읽거나 바꾸지 않습니다.
+필요하면 별도 가상환경에서 `python -m pip install playwright`, `python -m playwright install chromium`으로 준비합니다.
+상세 범위와 기록은 [docs/DEMO_VERIFICATION.md](docs/DEMO_VERIFICATION.md)를 참고하세요.

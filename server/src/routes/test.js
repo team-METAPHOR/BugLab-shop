@@ -5,6 +5,7 @@ import { ApiError, validationError } from '../errors.js';
 import { requireJson } from '../http.js';
 import { clearAuthState, findUserByEmail } from '../services/authService.js';
 import { clearCart, getCart } from '../services/cartService.js';
+import { clearFavorites } from '../services/favoriteService.js';
 
 function digest(value) {
   return crypto.createHash('sha256').update(String(value)).digest();
@@ -32,6 +33,7 @@ export function testRouter({ db, config }) {
 
     transaction(db, () => {
       clearCart(db, user.id);
+      clearFavorites(db, user.id);
       clearAuthState(db, user);
     });
     res.json({ email: user.email, cart: getCart(db, user.id) });

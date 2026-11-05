@@ -5,6 +5,7 @@ import { ApiError, sendError, validationError } from './errors.js';
 import { loadSession } from './http.js';
 import { authRouter } from './routes/auth.js';
 import { cartRouter } from './routes/cart.js';
+import { favoritesRouter } from './routes/favorites.js';
 import { healthRouter } from './routes/health.js';
 import { productsRouter } from './routes/products.js';
 import { testRouter } from './routes/test.js';
@@ -63,6 +64,7 @@ function apiRouter({ db, config, commit, startedAt }) {
   api.use('/auth', authRouter({ db, config }));
   api.use('/products', productsRouter({ db }));
   api.use('/cart', cartRouter({ db }));
+  api.use('/favorites', favoritesRouter({ db }));
   if (config.isDev) api.use('/test', testRouter({ db, config }));
   api.use((req, res, next) => next(new ApiError(404, 'NOT_FOUND')));
   return api;

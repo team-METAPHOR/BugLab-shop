@@ -6,6 +6,9 @@ import { clearSession, session, setCartCount } from '../stores/session.js'
 import { won } from '../utils/format.js'
 import { PHOTO_NOTES, PRODUCT_SPECS } from '../data/productSpecs.js'
 import AppIcon from '../components/AppIcon.vue'
+import ProductCard from '../components/ProductCard.vue'
+import { favorites, isFavorite, loadFavorites, toggleFavorite } from '../stores/favorites.js'
+import { openDelivery } from '../stores/delivery.js'
 
 const COUPON_AMOUNT = 5000
 
@@ -18,21 +21,33 @@ const message = ref(null) // { status: 'success' | 'error', text }
 const zoom = ref({ active: false, x: 50, y: 50 })
 const zoomLocked = ref(false) // 버튼(키보드·터치)으로 켠 확대
 const activeTab = ref('info')
+const purchaseSoldOut = ref(null)
+const recommendations = ref([])
+let requestSeq = 0
 
 const couponPrice = computed(() =>
   product.value && !product.value.soldOut && product.value.price > COUPON_AMOUNT ? product.value.price - COUPON_AMOUNT : null,
 )
 
 async function load(id) {
+  const seq = ++requestSeq
   status.value = 'loading'
   product.value = null
   message.value = null
   zoomLocked.value = false
   zoom.value = { active: false, x: 50, y: 50 }
   try {
-    product.value = await api.get(`/api/products/${encodeURIComponent(id)}`)
+    const loaded = await api.get(`/api/products/${encodeURIComponent(id)}`)
+    if (seq !== requestSeq) return
+    product.value = loaded
+    // INJECTED DEFECT B03: 재사용된 한정판 상세의 구매 영역은 이전 상품의 버튼 상태를 유지한다.
+    if (purchaseSoldOut.value === null || loaded.id !== 3) purchaseSoldOut.value = loaded.soldOut
     status.value = 'ready'
+    if (recommendations.value.length === 0) {
+      try { recommendations.value = (await api.get('/api/products')).items } catch { /* 추천만 생략한다. */ }
+    }
   } catch (error) {
+    if (seq !== requestSeq) return
     status.value = error instanceof ApiError && error.status === 404 ? 'not-found' : 'error'
   }
 }
@@ -44,7 +59,7 @@ function goLogin() {
 }
 
 async function addToCart() {
-  if (!product.value || product.value.soldOut || adding.value) return
+  if (!product.value || purchaseSoldOut.value || adding.value) return
   if (!session.user) {
     goLogin()
     return
@@ -65,6 +80,13 @@ async function addToCart() {
   } finally {
     adding.value = false
   }
+}
+
+watch(() => session.user?.id, (id) => { if (id) loadFavorites().catch(() => {}) }, { immediate: true })
+
+function changeFavorite() {
+  if (!session.user) { goLogin(); return }
+  toggleFavorite(product.value)
 }
 
 // 사진 확대: 마우스 위치를 확대 기준점으로 쓴다(마우스 포인터에서만).
@@ -122,7 +144,7 @@ watch(status, (value) => {
   })
 })
 
-onBeforeUnmount(() => tabObserver?.disconnect())
+onBeforeUnmount(() => { requestSeq++; tabObserver?.disconnect() })
 </script>
 
 <template>
@@ -207,12 +229,23 @@ onBeforeUnmount(() => tabObserver?.disconnect())
           data-testid="add-to-cart"
           class="btn btn--primary btn--xl detail__cta"
           type="button"
-          :disabled="product.soldOut || adding"
+          :disabled="purchaseSoldOut || adding"
           :aria-busy="adding"
           @click="addToCart"
         >
-          {{ product.soldOut ? '품절' : '장바구니 담기' }}
+          {{ purchaseSoldOut ? '품절' : '장바구니 담기' }}
         </button>
+
+        <div class="detail__secondary-actions">
+          <button type="button" :class="['btn', 'btn--ghost', { 'is-favorite': isFavorite(product.id) }]" data-testid="favorite-toggle"
+            :aria-pressed="isFavorite(product.id)" :disabled="favorites.pending" @click="changeFavorite">
+            <AppIcon name="heart" :size="18" /> {{ isFavorite(product.id) ? '찜 해제' : '찜하기' }}
+          </button>
+          <button type="button" class="btn btn--ghost" data-testid="delivery-open" @click="openDelivery(product, $event.currentTarget)">
+            <AppIcon name="truck" :size="18" /> 배송 안내
+          </button>
+        </div>
+        <p v-if="favorites.error" class="notice notice--error" role="alert">{{ favorites.error }}</p>
 
         <div v-if="message" :class="['detail__message', `is-${message.status}`]" aria-live="polite">
           <span class="detail__message-icon" aria-hidden="true">
@@ -272,6 +305,12 @@ onBeforeUnmount(() => tabObserver?.disconnect())
           <strong>7일 무료 반품</strong>
           <span>받은 날부터 7일 이내라면 무료로 반품할 수 있어요.</span>
         </li>
+      </ul>
+    </section>
+    <section v-if="recommendations.length" class="detail__recommendations" aria-labelledby="recommendations-title">
+      <h2 id="recommendations-title" class="detail__section-title">함께 둘러볼 상품</h2>
+      <ul class="product-grid" data-testid="related-products">
+        <ProductCard v-for="item in recommendations.filter((item) => item.id !== product.id)" :key="item.id" :product="item" />
       </ul>
     </section>
   </article>

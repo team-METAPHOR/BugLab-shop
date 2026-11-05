@@ -410,6 +410,12 @@ a.header-action:hover { background: var(--stone); }
 .product-card__link.is-soldout .product-card__price { color: var(--muted); }
 .product-card__tags { margin-top: var(--s1); display: flex; font-size: 0.75rem; color: var(--muted); }
 .product-card__tags span + span::before { content: '·'; margin: 0 var(--s1); color: var(--faint); }
+.product-card__quick-add { width: 100%; margin-top: var(--s2); }
+.quick-add-result { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); padding: var(--s2); background: var(--success-soft); color: var(--success); }
+.favorites-summary { margin: var(--s3) 0; }
+.favorites-grid { margin-bottom: var(--s3); }
+.favorite-entry > .btn { margin-top: var(--s2); }
+.favorite-entry > ul { margin: 0; padding: 0; list-style: none; }
 
 .product-grid--skeleton { margin-top: 0; }
 .skeleton-card { display: grid; gap: var(--s1); }
@@ -520,6 +526,18 @@ a.header-action:hover { background: var(--stone); }
 .detail__shipping dt .icon { color: var(--faint); }
 .detail__shipping dd { margin: 0; color: var(--sub); }
 .detail__cta { width: 100%; margin-top: var(--s1); }
+.detail__secondary-actions { display: flex; gap: var(--s1); width: 100%; }
+.detail__secondary-actions > .btn { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: var(--s1); }
+.is-favorite .icon { fill: currentColor; }
+.detail__recommendations { margin-top: var(--s6); }
+.detail__recommendations h2 { margin-bottom: var(--s3); }
+.delivery-dialog { z-index: 120; }
+.delivery-dialog__panel { width: min(600px, 100%); }
+.delivery-dialog__product { margin-bottom: var(--s3); font-size: 1.25rem; font-weight: 700; }
+.delivery-dialog__policies { display: grid; gap: var(--s3); margin: var(--s4) 0; }
+.delivery-dialog__policies > div { display: grid; grid-template-columns: 80px 1fr; gap: var(--s2); }
+.delivery-dialog__policies dd { margin: 0; }
+.delivery-dialog__panel > .btn { margin-top: var(--s4); }
 .detail__message { width: 100%; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; padding: var(--s2); border-radius: var(--r-sm); animation: rise 0.5s var(--ease) both; }
 .detail__message.is-success { background: var(--success-soft); color: var(--success); }
 .detail__message.is-error { background: var(--danger-soft); color: var(--danger); }

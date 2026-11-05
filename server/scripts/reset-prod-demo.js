@@ -1,10 +1,11 @@
-// production DB의 데모 계정(DEMO_ACCOUNT_EMAIL) 장바구니와 쿠폰 적용 이력을 비운다.
+// production DB의 데모 계정(DEMO_ACCOUNT_EMAIL) 장바구니·쿠폰·찜을 비운다.
 // 사용: npm --prefix server run reset:prod-demo
 import fs from 'node:fs';
 import { dbPathFor } from '../src/config.js';
 import { openDatabase, transaction } from '../src/db.js';
 import { findUserByEmail } from '../src/services/authService.js';
 import { clearCart } from '../src/services/cartService.js';
+import { clearFavorites } from '../src/services/favoriteService.js';
 
 function fail(message) {
   console.error(`[reset:prod-demo] ${message}`);
@@ -21,8 +22,11 @@ const db = openDatabase(dbPath);
 try {
   const user = findUserByEmail(db, email);
   if (!user) fail(`production DB에 ${email} 계정이 없습니다.`);
-  transaction(db, () => clearCart(db, user.id));
-  console.log(`[reset:prod-demo] ${email} 계정의 장바구니와 쿠폰 적용 이력을 초기화했습니다. (${dbPath})`);
+  transaction(db, () => {
+    clearCart(db, user.id);
+    clearFavorites(db, user.id);
+  });
+  console.log(`[reset:prod-demo] ${email} 계정의 장바구니·쿠폰·찜을 초기화했습니다. (${dbPath})`);
 } finally {
   db.close();
 }
