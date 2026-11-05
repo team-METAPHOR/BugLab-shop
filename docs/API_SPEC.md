@@ -90,7 +90,7 @@
 | POST | `/api/auth/signup` | - | 모두 | 회원가입 + 로그인 |
 | POST | `/api/auth/login` | - | 모두 | 로그인 |
 | POST | `/api/auth/logout` | 선택 | 모두 | 로그아웃 |
-| GET | `/api/auth/me` | 필요 | 모두 | 현재 사용자 |
+| GET | `/api/auth/me` | 선택 | 모두 | 현재 사용자(비로그인은 `null`) |
 | GET | `/api/products` | - | 모두 | 목록·검색 |
 | GET | `/api/products/:id` | - | 모두 | 상세 |
 | GET | `/api/cart` | 필요 | 모두 | 장바구니 조회 |
@@ -126,7 +126,7 @@
 요청 `{}`. 204. 서버 세션을 삭제하고 쿠키를 만료시킨다. 세션이 없어도 204.
 
 ### GET /api/auth/me
-200 `{ "user": User }` / 401 `UNAUTHENTICATED`
+200 `{ "user": User }`. 비로그인·만료 세션도 200 `{ "user": null }` (401을 내지 않는다).
 
 ### GET /api/products?q=
 - `q` 선택. 앞뒤 공백 제거 후 상품명 부분 일치(대소문자 무시). 비거나 없으면 전체.

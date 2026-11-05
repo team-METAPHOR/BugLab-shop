@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { clearSessionCookie, requireAuth, requireJson, setSessionCookie } from '../http.js';
+import { clearSessionCookie, requireJson, setSessionCookie } from '../http.js';
 import { createSession, deleteSession, login, signup, toUser } from '../services/authService.js';
 
 export function authRouter({ db, config }) {
@@ -29,8 +29,10 @@ export function authRouter({ db, config }) {
     res.status(204).end();
   });
 
-  router.get('/me', requireAuth, (req, res) => {
-    res.json({ user: toUser(req.user) });
+  // 로그인 여부 확인용. 비로그인도 200 { user: null }로 답한다.
+  // 첫 화면마다 호출되므로 401이면 재현 엔진이 페이지 로드 자체를 HTTP 오류로 보고 시도를 멈춘다.
+  router.get('/me', (req, res) => {
+    res.json({ user: req.user ? toUser(req.user) : null });
   });
 
   return router;

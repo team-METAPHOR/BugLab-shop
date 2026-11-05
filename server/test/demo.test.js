@@ -98,8 +98,12 @@ test('reset clears only the selected account cart, coupons, favorites and sessio
     assert.equal(getCart(db, 2).total, 25000);
     assert.equal(getFavorites(db, 2).items.length, 1);
     const me = (session) => fetch(`${origin}/api/auth/me`, { headers: { Cookie: `${config.sessionCookieName}=${session}` } });
-    assert.equal((await me(firstSession)).status, 401);
-    assert.equal((await me(secondSession)).status, 200);
+    const revoked = await me(firstSession);
+    assert.equal(revoked.status, 200);
+    assert.equal((await revoked.json()).user, null);
+    const active = await me(secondSession);
+    assert.equal(active.status, 200);
+    assert.notEqual((await active.json()).user, null);
   } finally {
     server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
