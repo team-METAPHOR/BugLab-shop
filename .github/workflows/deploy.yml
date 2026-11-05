@@ -1,0 +1,90 @@
+name: Deploy
+
+# Deploy both shops (production + dev) to the team EC2 after CI succeeds on main.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-buglab
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout the commit that passed CI
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Start ssh-agent with the deploy key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Trust the server host key
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync code to the server
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        # Keep server-only files: env files hold dev secrets, data/ holds the SQLite DBs,
+        # node_modules/dist are rebuilt on the server.
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            --exclude='server/node_modules/' \
+            --exclude='server/.env.production' \
+            --exclude='server/.env.dev' \
+            --exclude='server/data/' \
+            ./ "$SSH_USER@$SSH_HOST:/home/ubuntu/buglab-shop/"
+
+      - name: Install, build, and restart both shops
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd /home/ubuntu/buglab-shop
+          npm ci --no-audit --no-fund
+          npm --prefix server ci --no-audit --no-fund
+          npm run build
+          sudo /usr/bin/systemctl restart buglab-prod.service
+          sudo /usr/bin/systemctl restart buglab-dev.service
+          REMOTE
+
+      - name: Health check both shops
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          # production is public; dev is localhost-only, so check it over SSH.
+          ok=0
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://$SSH_HOST:3200/api/health" || true)
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            echo "prod attempt $i: HTTP $code"; sleep 3
+          done
+          [ "$ok" = "1" ] || { echo "production health check failed"; exit 1; }
+          echo "production OK:"; curl -s "http://$SSH_HOST:3200/api/health"; echo
+          echo "dev (localhost on server):"
+          ssh "$SSH_USER@$SSH_HOST" 'curl -s http://127.0.0.1:3100/api/health'; echo
