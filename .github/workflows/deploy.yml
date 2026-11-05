@@ -40,6 +40,10 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
+      - name: Record the deployed commit
+        # .git is not synced, so /api/health reads the commit from this file.
+        run: git rev-parse --short HEAD > BUILD_COMMIT
+
       - name: Sync code to the server
         env:
           SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
