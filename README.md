@@ -68,6 +68,8 @@ dev는 `TEST_CONTROL_TOKEN`, `TEST_ACCOUNT_PASSWORD`가 없으면 시작하지 �
 
 production에서 `server/.env.production`에 `METAPHOR_SDK_URL`, `METAPHOR_API_URL`, `METAPHOR_PROJECT_KEY`를 넣으면 서버가 `index.html`에 SDK 스크립트를 넣고 CSP에 두 origin을 허용합니다. dev에서는 설정이 있어도 SDK를 넣지 않습니다(엔진 재현과 충돌 방지). 자세한 내용은 [기능 명세서 9장](docs/FUNCTIONAL_SPEC.md#9-메타포-sdk-연동).
 
+SDK의 상시 ‘버그 신고’ 버튼은 `data-metaphor-show-launcher="false"`로 숨깁니다. 자동 감지 후 표시되는 신고 안내는 유지합니다. 이 옵션이 포함된 SDK를 배포해야 적용되며 기존 SDK 0.1.0 파일만으로는 숨겨지지 않습니다.
+
 ## 알려진 제약
 
 - 장바구니는 서버 DB에 사용자별로 저장됩니다. 새로고침·재로그인 후에도 유지됩니다.
