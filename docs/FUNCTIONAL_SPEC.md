@@ -241,6 +241,8 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 - 프로젝트 키는 브라우저에 노출되는 공개 키다. 비밀값을 넣지 않는다.
 - BugLab 자체 신고 버튼은 없다. `data-metaphor-show-launcher="false"`로 SDK의 상시 신고 버튼만 숨긴다. SDK의 자동 오류 감지·레이지클릭 신고 안내와 그 안내를 통한 신고는 유지한다. 이 옵션을 지원하는 SDK 배포가 필요하며 기존 0.1.0 파일은 지원하지 않는다.
 
+- 회원가입 화면에 선택 동의 체크박스(버그 신고 시 브라우저 환경 정보·마스킹된 화면 캡처 전송)가 있다. 기본은 해제이고 `users.report_consent`에 저장하며 `/api/auth/me`가 `reportConsent`로 돌려준다. 동의한 회원이 로그인해 있으면 프런트가 `window.metaphorConsent = { environment: true, screenshot: true }`를 넣고, 로그아웃하면 지운다. SDK 0.1.2 이상은 이 값이 있으면 신고 창의 동의 체크박스를 숨긴다. 비로그인·미동의 회원은 신고할 때마다 체크박스로 묻는다.
+
 ### 9.3 프로그램 소유 확인 (dev/production 공통)
 
 - `METAPHOR_VERIFY_TOKEN`이 있으면 `GET /.well-known/metaphor-verify.txt`는 200과 토큰 원문을 반환한다.

@@ -587,6 +587,8 @@ a.header-action:hover { background: var(--stone); }
 .form { display: grid; gap: var(--s3); }
 .form .btn--xl { margin-top: var(--s1); }
 .field { display: grid; gap: var(--s1); }
+.consent { display: flex; gap: var(--s1); align-items: flex-start; font-size: 0.8125rem; color: var(--sub); line-height: 1.5; cursor: pointer; }
+.consent input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--ink); }
 .field__label { font-weight: 600; font-size: 0.8125rem; color: var(--sub); }
 .field input { height: 56px; padding: 0 var(--s2); border: 1px solid var(--line-strong); border-radius: var(--r-sm); font: inherit; background: var(--surface); transition: border-color 0.25s var(--ease), box-shadow 0.3s var(--ease); }
 .field input:hover { border-color: var(--line-hover); }
