@@ -43,10 +43,19 @@ for (const appEnv of ['production', 'dev']) {
   }
 }
 
-test('verification body is bounded to 1 KiB of UTF-8 without changing its value', () => {
+test('verification body is the trimmed token, bounded to 1 KiB of UTF-8', () => {
   assert.equal(loadConfig({ APP_ENV: 'production', METAPHOR_VERIFY_TOKEN: 'x'.repeat(1024) }).metaphorVerifyToken.length, 1024);
   for (const token of ['x'.repeat(1025), '가'.repeat(342)]) {
     assert.throws(() => loadConfig({ APP_ENV: 'production', METAPHOR_VERIFY_TOKEN: token }), ConfigError);
   }
   assert.equal(loadConfig({ APP_ENV: 'production', METAPHOR_VERIFY_TOKEN: '' }).metaphorVerifyToken, undefined);
+  assert.equal(loadConfig({ APP_ENV: 'production', METAPHOR_VERIFY_TOKEN: ' \n ' }).metaphorVerifyToken, undefined);
+  assert.equal(
+    loadConfig({ APP_ENV: 'production', METAPHOR_VERIFY_TOKEN: '  demo-verification-token\r\n' }).metaphorVerifyToken,
+    'demo-verification-token',
+  );
+  assert.equal(
+    loadConfig({ APP_ENV: 'production', METAPHOR_VERIFY_TOKEN: ` ${'x'.repeat(1024)}\n` }).metaphorVerifyToken.length,
+    1024,
+  );
 });

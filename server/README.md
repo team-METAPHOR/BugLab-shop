@@ -43,19 +43,19 @@ npm --prefix server run start:prod
 | `DATA_DIR` | `server/data` | SQLite 파일 위치. 파일명 `{APP_ENV}.db` |
 | `STATIC_DIR` | `<repo>/dist` | 프론트엔드 빌드 결과물 |
 | `SESSION_COOKIE_NAME` | `buglab_dev_sid`(dev) / `buglab_sid`(production) | |
-| `COOKIE_SECURE` | `false` | HTTPS 배포 시 `true` |
+| `COOKIE_SECURE` | `false` | HTTPS 배포 시 `true`(production 예시 기본값). HTTP로 production을 로컬 확인할 때만 `false` |
 | `BUILD_COMMIT` | `git rev-parse --short HEAD`, 실패 시 `unknown` | `/api/health`의 `commit` |
 | `TEST_CONTROL_TOKEN` | 없음 | dev 필수. `/api/test/reset`의 `X-Test-Token` |
 | `TEST_ACCOUNT_PASSWORD` | 없음 | dev 필수. `qa1@buglab.test`, `qa2@buglab.test` 비밀번호 |
 | `DEMO_ACCOUNT_EMAIL` / `DEMO_ACCOUNT_PASSWORD` | 없음 | production 선택. 둘 다 있으면 데모 계정 시드 |
-| `METAPHOR_SDK_URL` / `METAPHOR_API_URL` / `METAPHOR_PROJECT_KEY` | 없음 | production 선택. 셋 다 있으면 index.html에 메타포 SDK 태그 삽입 + CSP 허용. dev에서는 무시 |
+| `METAPHOR_SDK_URL` / `METAPHOR_API_URL` / `METAPHOR_PROJECT_KEY` | 없음 | production 선택. 셋 다 있으면 index.html에 메타포 SDK 태그 삽입 + CSP 허용. dev에서는 무시. SDK URL은 `<METAPHOR_API_URL>/sdk/v1/metaphor.js`, 키는 `mpk_`로 시작 |
 | `METAPHOR_VERIFY_TOKEN` | 없음 | dev/production 공통. 소유 확인용 공개 토큰, UTF-8 기준 최대 1024바이트 |
 
 dev에서 `TEST_CONTROL_TOKEN` 또는 `TEST_ACCOUNT_PASSWORD`가 없으면 서버는 시작하지 않고 종료 코드 1로 끝난다.
 
 메타포 프로그램의 소유 확인 화면에서 받은 토큰을 해당 서버의 `.env.production` 또는
 `.env.dev`에 `METAPHOR_VERIFY_TOKEN`으로 넣고 서버를 재시작한다.
-`GET /.well-known/metaphor-verify.txt`는 토큰이 있으면 200과 토큰 원문만 반환한다
+`GET /.well-known/metaphor-verify.txt`는 토큰이 있으면 200과 앞뒤 공백을 뺀 토큰만 반환한다
 (`text/plain; charset=utf-8`, 리다이렉트 없음, 캐시 없음). 없으면 404다.
 다른 dotfile 경로는 계속 404이며 SPA 화면으로 대체하지 않는다.
 소유 확인은 API가 사이트의 공개 주소에 접속해 수행하므로 외부에서 접근 가능해야 한다.
