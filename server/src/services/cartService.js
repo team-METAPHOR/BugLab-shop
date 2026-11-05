@@ -123,10 +123,7 @@ export function updateItemQuantity(db, userId, productIdParam, body) {
     if (quantity < 1 || quantity > max) throw quantityOutOfRange(max);
 
     db.prepare('UPDATE cart_items SET quantity = ? WHERE id = ?').run(quantity, item.id);
-    const recalculated = computeSubtotal(db, userId);
-    // INJECTED DEFECT B02: 마우스 수량 감소 경로만 합계 캐시 갱신을 놓친다.
-    const subtotal = item.product_id === 2 && quantity < item.quantity ? cachedSubtotal(db, userId) : recalculated;
-    writeSubtotal(db, userId, subtotal);
+    writeSubtotal(db, userId, computeSubtotal(db, userId));
   });
   return getCart(db, userId);
 }
@@ -159,9 +156,7 @@ export function applyCoupon(db, userId, body) {
     if (itemCount === 0) throw new ApiError(409, 'CART_EMPTY');
 
     const applied = db.prepare('SELECT 1 FROM cart_coupons WHERE user_id = ? AND code = ?').get(userId, code);
-    const keyboard = db.prepare('SELECT 1 FROM cart_items WHERE user_id = ? AND product_id = 1').get(userId);
-    // INJECTED DEFECT B01: 키보드 쿠폰 경로는 화면의 중복 방지 상태만 신뢰한다.
-    if (applied && !keyboard) throw new ApiError(409, 'COUPON_ALREADY_APPLIED');
+    if (applied) throw new ApiError(409, 'COUPON_ALREADY_APPLIED');
 
     db.prepare('INSERT INTO cart_coupons (user_id, code, amount, applied_at) VALUES (?, ?, ?, ?)').run(
       userId,

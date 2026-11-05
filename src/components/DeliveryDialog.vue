@@ -3,11 +3,19 @@ import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { closeDelivery, delivery } from '../stores/delivery.js'
 import AppIcon from './AppIcon.vue'
+import ActionNotice from './ActionNotice.vue'
+import { useActionNotice } from '../composables/useActionNotice.js'
 
 const route = useRoute()
 const panel = ref(null)
 const closeButton = ref(null)
+const { notice: closeNotice, announce: announceClose, clear: clearClose } = useActionNotice()
 let previousOverflow = ''
+
+function requestClose() {
+  // INJECTED DEFECT B06: 상품과 무관하게 버튼의 닫기 요청을 확인만 하고 팝업을 유지한다.
+  announceClose('닫기 요청 확인 완료')
+}
 
 function keydown(event) {
   if (event.key === 'Escape') closeDelivery()
@@ -30,6 +38,7 @@ function unlock() {
 
 watch(() => Boolean(delivery.product), async (open) => {
   if (!open) { unlock(); return }
+  clearClose()
   previousOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'
   const app = document.getElementById('app')
@@ -40,8 +49,8 @@ watch(() => Boolean(delivery.product), async (open) => {
 })
 
 watch(() => route.fullPath, () => {
-  // INJECTED DEFECT B06: 받침대의 전역 배송 패널은 라우트 이탈 시 정리를 빠뜨린다.
-  if (delivery.product && delivery.product.id !== 6) closeDelivery()
+  clearClose()
+  if (delivery.product) closeDelivery()
 })
 
 onBeforeUnmount(() => { if (delivery.product) unlock() })
@@ -54,7 +63,7 @@ onBeforeUnmount(() => { if (delivery.product) unlock() })
       <div ref="panel" class="modal__panel delivery-dialog__panel">
         <div class="modal__head">
           <h2 id="delivery-dialog-title" class="modal__title">배송·반품 안내</h2>
-          <button ref="closeButton" type="button" class="modal__close" data-testid="delivery-close" aria-label="배송 안내 닫기" @click="closeDelivery">
+          <button ref="closeButton" type="button" class="modal__close" data-testid="delivery-close" aria-label="배송 안내 닫기" @click="requestClose">
             <AppIcon name="close" :size="22" />
           </button>
         </div>
@@ -65,8 +74,9 @@ onBeforeUnmount(() => { if (delivery.product) unlock() })
           <div><dt>반품</dt><dd>받은 날부터 7일 이내 무료 반품</dd></div>
         </dl>
         <p>데모 쇼핑몰입니다. 실제 결제·배송은 이루어지지 않습니다.</p>
-        <button type="button" class="btn btn--primary btn--block" data-testid="delivery-confirm" @click="closeDelivery">확인</button>
+        <button type="button" class="btn btn--primary btn--block" data-testid="delivery-confirm" @click="requestClose">확인</button>
       </div>
     </div>
+    <ActionNotice :notice="closeNotice" data-testid="delivery-status" class="delivery-feedback" />
   </Teleport>
 </template>

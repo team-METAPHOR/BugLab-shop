@@ -52,100 +52,224 @@ def row(page, product_id):
     return page.locator(f'[data-testid="cart-item"][data-product-id="{product_id}"]')
 
 
+AVAILABLE = [(1, 30000), (2, 18000), (4, 42000), (5, 15000), (6, 35000)]
+
+
+def won(amount):
+    return f"{amount:,}원"
+
+
+def refreshed_notice(page, name, text, action):
+    """A repeated action must refresh the signal, not reuse an old completion."""
+    target = tid(page, name)
+    tracker = target.evaluate_handle("""node => {
+        const state = {count: 0};
+        state.observer = new MutationObserver(records => state.count += records.length);
+        state.observer.observe(node, {childList: true, characterData: true, subtree: true});
+        return state;
+    }""")
+    try:
+        action()
+        expect(target).to_have_text(text)
+        assert tracker.evaluate("""state => {
+            state.count += state.observer.takeRecords().length;
+            return state.count > 0;
+        }"""), "Completion must change for this action"
+    finally:
+        tracker.evaluate("state => state.observer.disconnect()")
+        tracker.dispose()
+
+
 def b01(page):
+    requests = []
+    page.on("request", lambda request: requests.append(request.url)
+            if request.method == "POST" and request.url.endswith("/api/cart/coupons") else None)
+    for product_id, price in AVAILABLE:
+        add(page, product_id)
+        page.goto("/cart")
+        apply_coupon(page)
+        expect(tid(page, "coupon-status")).to_have_text("쿠폰 확인 완료")
+        refreshed_notice(page, "coupon-status", "쿠폰 확인 완료", lambda: tid(page, "apply-coupon").click())
+        # Chip and Enter must not bypass the defect.
+        tid(page, "coupon-input").fill("")
+        page.get_by_role("button", name="SAVE5000 5,000원 할인").click()
+        refreshed_notice(page, "coupon-status", "쿠폰 확인 완료", lambda: tid(page, "coupon-input").press("Enter"))
+        expect(tid(page, "cart-total")).to_have_text(won(price))
+        expect(tid(page, "cart-discount")).to_have_text("0원")
+        expect(tid(page, "applied-coupons")).to_have_count(0)
+        page.reload()
+        apply_coupon(page)
+        expect(tid(page, "coupon-status")).to_have_text("쿠폰 확인 완료")
+        state = page.request.get("/api/cart").json()
+        assert state["discount"] == 0 and state["appliedCoupons"] == [] and state["total"] == price
+        tid(page, "remove-item").click()
+        expect(tid(page, "cart-empty")).to_be_visible()
+    # Mixed carts must fail in the same way.
     add(page, 1)
+    add(page, 2)
     page.goto("/cart")
     apply_coupon(page)
-    expect(tid(page, "cart-total")).to_have_text("25,000원")
-    apply_coupon(page)
-    expect(tid(page, "coupon-message")).to_have_text("이미 적용된 쿠폰입니다.")
-    expect(tid(page, "cart-total")).to_have_text("25,000원")
-    page.reload()
-    apply_coupon(page)
-    expect(tid(page, "cart-total")).to_have_text("20,000원")
-    expect(tid(page, "applied-coupons").locator("li")).to_have_count(2)
-    page.reload()
-    expect(tid(page, "cart-total")).to_have_text("20,000원")
-    return {"before": 25000, "after_reload_and_reapply": 20000, "coupons": 2}
+    expect(tid(page, "cart-total")).to_have_text("48,000원")
+    assert not requests, "The injected UI path must not submit a coupon"
+    return {"products_checked": len(AVAILABLE), "mixed_cart": True, "chip_enter_reload": True, "coupon_posts": 0}
 
 
 def b02(page):
+    for product_id, price in AVAILABLE:
+        add(page, product_id)
+        add(page, product_id)
+        page.goto("/cart")
+        item = row(page, product_id)
+        tid(item, "quantity-increase").click()
+        expect(tid(page, "quantity-status")).to_have_text("수량 확인 완료")
+        refreshed_notice(page, "quantity-status", "수량 확인 완료", lambda: tid(item, "quantity-increase").click())
+        expect(tid(item, "cart-quantity")).to_have_text("2")
+        expect(tid(page, "cart-subtotal")).to_have_text(won(price * 2))
+        state = page.request.get("/api/cart").json()
+        assert state["items"][0]["quantity"] == 2 and state["subtotal"] == price * 2
+        # Decreases still work and the old mouse subtotal bug is gone.
+        tid(item, "quantity-decrease").click()
+        expect(tid(item, "cart-quantity")).to_have_text("1")
+        expect(tid(page, "cart-subtotal")).to_have_text(won(price))
+        tid(item, "quantity-increase").click()
+        expect(tid(item, "cart-quantity")).to_have_text("1")
+        page.reload()
+        expect(tid(row(page, product_id), "cart-quantity")).to_have_text("1")
+        expect(tid(page, "cart-subtotal")).to_have_text(won(price))
+        tid(page, "remove-item").click()
+        expect(tid(page, "cart-empty")).to_be_visible()
     add(page, 2)
     page.goto("/cart")
-    tid(row(page, 2), "quantity-increase").click()
-    expect(tid(page, "cart-subtotal")).to_have_text("36,000원")
-    tid(row(page, 2), "quantity-decrease").click()
-    expect(tid(row(page, 2), "cart-quantity")).to_have_text("1")
-    expect(tid(row(page, 2), "cart-line-total")).to_have_text("18,000원")
-    expect(tid(page, "cart-subtotal")).to_have_text("36,000원")
-    page.reload()
-    expect(tid(page, "cart-subtotal")).to_have_text("36,000원")
-    return {"quantity": 1, "line_total": 18000, "subtotal": 36000}
+    tid(page, "quantity-increase").click()
+    expect(tid(page, "quantity-status")).to_have_text("수량 확인 완료")
+    expect(tid(page, "cart-quantity")).to_have_text("1")
+    return {"products_checked": len(AVAILABLE), "increase": "unchanged", "decrease_and_persistence": "normal"}
+
+
+def check_restock(page):
+    expect(tid(page, "product-name")).to_have_text("BugLab 기계식 키보드 한정판")
+    expect(tid(page, "stock-status")).to_have_text("품절")
+    expect(tid(page, "add-to-cart")).to_be_disabled()
+    tid(page, "restock-open").click()
+    expect(tid(page, "restock-status")).to_have_text("재입고 알림 안내 확인 완료")
+    refreshed_notice(page, "restock-status", "재입고 알림 안내 확인 완료", lambda: tid(page, "restock-open").click())
+    expect(tid(page, "restock-dialog")).to_be_hidden()
 
 
 def b03(page):
     ready_product(page, 3)
-    expect(tid(page, "add-to-cart")).to_be_disabled()
-    ready_product(page, 1)
-    tid(page, "related-products").locator('[data-product-id="3"] a').click()
-    expect(tid(page, "product-name")).to_have_text("BugLab 기계식 키보드 한정판")
-    expect(tid(page, "stock-status")).to_have_text("품절")
-    expect(tid(page, "add-to-cart")).to_be_enabled()
-    tid(page, "add-to-cart").click()
-    expect(tid(page, "add-to-cart-message")).to_have_text("품절된 상품입니다.")
-    return {"direct_disabled": True, "via_related_disabled": False, "server_rejects": True}
+    check_restock(page)
+    page.reload()
+    check_restock(page)
+    for path in ["/", "/?q=키보드"]:
+        page.goto(path)
+        tid(page, "search-results").locator('[data-product-id="3"] a').click()
+        check_restock(page)
+    for product_id, _ in AVAILABLE:
+        ready_product(page, product_id)
+        expect(tid(page, "restock-open")).to_have_count(0)
+        tid(page, "related-products").locator('[data-product-id="3"] a').click()
+        check_restock(page)
+    return {"direct_reload_home_search": True, "recommendation_sources": len(AVAILABLE), "stock_button_disabled": True}
 
 
 def b04(page):
-    posts = []
-    page.on("request", lambda request: posts.append(request.url)
-            if request.method == "POST" and request.url.endswith("/api/cart/items") else None)
-    page.goto("/")
+    for path in ["/", "/?q=마우스", *[f"/products/{i}" for i in range(1, 7)]]:
+        page.goto(path)
+        expect(tid(page, "search-input")).to_be_visible()
+        before = page.url
+        link = page.locator('[data-testid="category-link"][data-category="허브"]')
+        link.click()
+        expect(tid(page, "category-status")).to_have_text("카테고리 선택 확인 완료")
+        refreshed_notice(page, "category-status", "카테고리 선택 확인 완료", lambda: link.click())
+        assert page.url == before
+    page.get_by_role("button", name="전체 카테고리 열기").click()
+    page.locator('[data-testid="mega-category-link"][data-category="허브"]').click()
+    expect(tid(page, "category-status")).to_have_text("카테고리 선택 확인 완료")
+    assert page.url == before
+    page.get_by_role("button", name="전체 카테고리 닫기").click()
+    # Other category links and a direct hub search are normal controls.
+    page.locator('[data-testid="category-link"][data-category="마우스"]').click()
+    expect(tid(page, "search-results").get_by_test_id("product-card")).to_have_count(1)
+    expect(tid(page, "search-summary")).to_contain_text("마우스")
     tid(page, "search-input").fill("허브")
     tid(page, "search-submit").click()
-    card = page.locator('[data-testid="product-card"][data-product-id="4"]')
-    tid(card, "quick-add").click()
-    expect(tid(page, "cart-count")).to_have_text("2")
-    expect(tid(card, "quick-add")).to_be_enabled()
-    assert len(posts) == 2, "One quick-add click must produce exactly two requests"
-    tid(page, "quick-add-go-to-cart").click()
-    expect(tid(row(page, 4), "cart-quantity")).to_have_text("2")
-    expect(tid(page, "cart-subtotal")).to_have_text("84,000원")
-    return {"clicks": 1, "post_requests": len(posts), "quantity": 2, "subtotal": 84000}
+    expect(tid(page, "search-summary")).to_contain_text("허브")
+    expect(tid(page, "search-results").get_by_test_id("product-card")).to_have_count(1)
+    ready_product(page, 4)
+    page.locator('[data-testid="category-link"][data-category="허브"]').click()
+    expect(tid(page, "category-status")).to_have_text("카테고리 선택 확인 완료")
+    return {"entry_pages_checked": 8, "both_header_menus": True, "other_category_and_search": "normal"}
 
 
 def b05(page):
+    for product_id in range(1, 7):
+        ready_product(page, product_id)
+        button = tid(page, "favorite-toggle")
+        expect(button).to_have_text("찜하기")
+        before = page.request.get("/api/favorites").json()["items"]
+        button.click()
+        expect(tid(page, "favorite-status")).to_have_text("찜 상태 확인 완료")
+        refreshed_notice(page, "favorite-status", "찜 상태 확인 완료", lambda: button.click())
+        expect(button).to_have_text("찜하기")
+        expect(button).to_have_attribute("aria-pressed", "false")
+        expect(tid(page, "favorites-count")).to_have_text("0")
+        assert page.request.get("/api/favorites").json()["items"] == before
+        # A saved favorite must also stay saved when the broken detail button is used.
+        response = page.request.post("/api/favorites", data={"productId": product_id})
+        assert response.status == 200
+        page.reload()
+        expect(button).to_have_text("찜 해제")
+        button.click()
+        expect(tid(page, "favorite-status")).to_have_text("찜 상태 확인 완료")
+        expect(button).to_have_text("찜 해제")
+        assert len(page.request.get("/api/favorites").json()["items"]) == 1
+        # The normal list removal uses the real UUID, including a hydrated mat.
+        page.goto("/favorites")
+        tid(page, "favorite-remove").click()
+        expect(tid(page, "favorites-empty")).to_be_visible()
+        assert page.request.get("/api/favorites").json()["items"] == []
     ready_product(page, 5)
-    expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "false")
     tid(page, "favorite-toggle").click()
-    expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "true")
-    page.reload()
-    expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "true")
-    tid(page, "favorite-toggle").click()
-    expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "false")
-    expect(tid(page, "favorite-toggle")).to_be_enabled()
-    assert len(page.request.get("/api/favorites").json()["items"]) == 1
-    page.reload()
-    expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "true")
-    tid(page, "favorites-link").click()
-    expect(tid(page, "favorite-item")).to_have_count(1)
-    return {"after_remove_ui": 0, "after_reload": 1, "server_items": 1}
+    expect(tid(page, "favorite-status")).to_have_text("찜 상태 확인 완료")
+    expect(tid(page, "favorite-toggle")).to_have_text("찜하기")
+    return {"products_checked": 6, "both_initial_states": True, "list_removal_and_uuid": "normal"}
 
 
 def b06(page):
-    page.goto("/")
-    page.locator('[data-testid="product-card"][data-product-id="6"] a').click()
+    for product_id in range(1, 7):
+        ready_product(page, product_id)
+        tid(page, "delivery-open").click()
+        expect(tid(page, "delivery-dialog")).to_be_visible()
+        tid(page, "delivery-close").click()
+        expect(tid(page, "delivery-status")).to_have_text("닫기 요청 확인 완료")
+        refreshed_notice(page, "delivery-status", "닫기 요청 확인 완료", lambda: tid(page, "delivery-confirm").click())
+        expect(tid(page, "delivery-dialog")).to_be_visible()
+        assert page.locator("#app").evaluate("el => el.inert")
+        page.keyboard.press("Escape")
+        expect(tid(page, "delivery-dialog")).to_have_count(0)
+        assert not page.locator("#app").evaluate("el => el.inert")
+        expect(tid(page, "delivery-open")).to_be_focused()
+        tid(page, "delivery-open").click()
+        tid(page, "delivery-dialog").click(position={"x": 4, "y": 4})
+        expect(tid(page, "delivery-dialog")).to_have_count(0)
+        # Real history navigation removes every dialog, including the old stand bug.
+        page.goto("/")
+        tid(page, "search-results").locator(f'[data-product-id="{product_id}"] a').click()
+        tid(page, "delivery-open").click()
+        page.go_back()
+        expect(tid(page, "delivery-dialog")).to_have_count(0)
+        assert urlsplit(page.url).path == "/"
+        assert not page.locator("#app").evaluate("el => el.inert")
+    ready_product(page, 6)
     tid(page, "delivery-open").click()
+    tid(page, "delivery-confirm").click()
+    expect(tid(page, "delivery-status")).to_have_text("닫기 요청 확인 완료")
     expect(tid(page, "delivery-dialog")).to_be_visible()
-    page.go_back()
-    page.wait_for_url(lambda url: urlsplit(url).path == "/")
-    expect(tid(page, "delivery-dialog")).to_be_visible()
-    expect(tid(page, "delivery-product-name")).to_have_text("원목 모니터 받침대")
-    return {"url_after_back": "/", "dialog_still_visible": True}
+    return {"products_checked": 6, "close_and_confirm": "unchanged", "escape_backdrop_route_exit": "normal"}
 
 
 def controls(page):
-    # The old empty-search defect is fixed, including in-page and direct empty searches.
     page.goto("/")
     expect(tid(page, "search-results").get_by_test_id("product-card")).to_have_count(6)
     tid(page, "search-input").fill("키보드")
@@ -153,83 +277,51 @@ def controls(page):
     expect(tid(page, "search-results").get_by_test_id("product-card")).to_have_count(2)
     tid(page, "search-input").fill("냉장고")
     tid(page, "search-submit").click()
+    expect(tid(page, "empty-results")).to_be_visible()
     expect(tid(page, "search-results").get_by_test_id("product-card")).to_have_count(0)
-    expect(tid(page, "empty-results")).to_be_visible()
     page.reload()
     expect(tid(page, "empty-results")).to_be_visible()
-    # Every in-stock product other than the mouse recalculates downward correctly.
-    for product_id, price in [(1, "30,000원"), (4, "42,000원"), (5, "15,000원"), (6, "35,000원")]:
-        add(page, product_id)
-        page.goto("/cart")
-        tid(row(page, product_id), "quantity-increase").click()
-        expect(tid(row(page, product_id), "cart-quantity")).to_have_text("2")
-        tid(row(page, product_id), "quantity-decrease").click()
-        expect(tid(row(page, product_id), "cart-quantity")).to_have_text("1")
-        expect(tid(page, "cart-subtotal")).to_have_text(price)
-        tid(row(page, product_id), "remove-item").click()
-        expect(tid(page, "cart-empty")).to_be_visible()
-    # Ordinary quick-add, including its disabled state and submitted quantity.
-    page.goto("/?q=마우스")
+    # One hub quick-add click now submits once and adds exactly one.
+    posts = []
+    page.on("request", lambda request: posts.append(request.url)
+            if request.method == "POST" and request.url.endswith("/api/cart/items") else None)
+    page.goto("/?q=허브")
     tid(page, "quick-add").click()
-    expect(tid(page, "cart-count")).to_have_text("1")
+    expect(tid(page, "quick-add-message")).to_have_text("장바구니에 담았습니다.")
     expect(tid(page, "quick-add")).to_be_enabled()
+    assert len(posts) == 1
     page.goto("/cart")
-    tid(page, "remove-item").click()
-    expect(tid(page, "cart-empty")).to_be_visible()
-    # Coupon API rejects duplicates for carts without the keyboard, also after reload.
-    add(page, 4)
-    page.goto("/cart")
-    apply_coupon(page)
-    expect(tid(page, "cart-total")).to_have_text("37,000원")
+    expect(tid(page, "cart-quantity")).to_have_text("1")
+    expect(tid(page, "cart-subtotal")).to_have_text("42,000원")
+    # The server remains correct despite the injected UI failures.
+    assert page.request.post("/api/cart/items", data={"productId": 1}).status == 200
+    assert page.request.post("/api/cart/items", data={"productId": 2, "quantity": 2}).status == 200
+    changed = page.request.patch("/api/cart/items/2", data={"quantity": 1}).json()
+    assert changed["subtotal"] == 90000
+    response = page.request.post("/api/cart/coupons", data={"code": "SAVE5000"})
+    assert response.status == 200 and response.json()["total"] == 85000
+    duplicate = page.request.post("/api/cart/coupons", data={"code": "SAVE5000"})
+    assert duplicate.status == 409 and duplicate.json()["error"]["code"] == "COUPON_ALREADY_APPLIED"
     page.reload()
-    apply_coupon(page)
-    expect(tid(page, "coupon-message")).to_have_text("이미 적용된 쿠폰입니다.")
-    expect(tid(page, "cart-total")).to_have_text("37,000원")
-    # Favorite immediately undone is normal even for the mat; other products hydrate correctly.
-    for product_id, reload_first in [(5, False), (4, True)]:
-        ready_product(page, product_id)
-        tid(page, "favorite-toggle").click()
-        expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "true")
-        if reload_first:
-            page.reload()
-            expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "true")
-        tid(page, "favorite-toggle").click()
-        expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "false")
-        expect(tid(page, "favorite-toggle")).to_be_enabled()
-        page.reload()
-        expect(tid(page, "favorite-toggle")).to_have_attribute("aria-pressed", "false")
-    # All normal shipping dialogs close via X, Escape, backdrop, and route exit.
-    for product_id in [1, 2, 3, 4, 5, 6]:
-        ready_product(page, product_id)
-        tid(page, "delivery-open").click()
-        expect(tid(page, "delivery-dialog")).to_be_visible()
-        tid(page, "delivery-close").click()
-        expect(tid(page, "delivery-dialog")).to_have_count(0)
-        assert not page.locator("#app").evaluate("el => el.inert")
-        expect(tid(page, "delivery-open")).to_be_focused()
-    ready_product(page, 6)
-    tid(page, "delivery-open").click()
-    page.keyboard.press("Escape")
-    expect(tid(page, "delivery-dialog")).to_have_count(0)
-    tid(page, "delivery-open").click()
-    tid(page, "delivery-dialog").click(position={"x": 4, "y": 4})
-    expect(tid(page, "delivery-dialog")).to_have_count(0)
-    page.goto("/")
-    page.locator('[data-testid="product-card"][data-product-id="2"] a').click()
-    tid(page, "delivery-open").click()
-    page.go_back()
-    expect(tid(page, "delivery-dialog")).to_have_count(0)
-    assert not page.locator("#app").evaluate("el => el.inert")
-    # Direct sold-out detail and server stock rejection remain normal.
+    expect(tid(page, "cart-total")).to_have_text("85,000원")
     ready_product(page, 3)
     expect(tid(page, "add-to-cart")).to_be_disabled()
     response = page.request.post("/api/cart/items", data={"productId": 3, "quantity": 1})
     assert response.status == 409 and response.json()["error"]["code"] == "OUT_OF_STOCK"
-    return {"search": "fixed", "other_quantity": "normal", "other_coupon": "normal",
-            "other_quick_add": "normal", "favorite_controls": "normal", "dialog_controls": "normal"}
+    # Unauthenticated favorite clicks still use the ordinary login flow.
+    anonymous = page.context.browser.new_context(base_url=page.url.split('/products/')[0])
+    try:
+        other = anonymous.new_page()
+        ready_product(other, 1)
+        tid(other, "favorite-toggle").click()
+        expect(tid(other, "login-submit")).to_be_visible()
+    finally:
+        anonymous.close()
+    return {"search": "normal", "hub_quick_add_posts": 1, "server_quantity_coupon_stock": "normal", "login_redirect": "normal"}
 
 
 CASES = [("B01", b01), ("B02", b02), ("B03", b03), ("B04", b04), ("B05", b05), ("B06", b06), ("controls", controls)]
+AUTH_CASES = {"B01", "B02", "B05", "controls"}
 
 
 def main():
@@ -285,7 +377,9 @@ def main():
                             page.on("pageerror", lambda error: page_errors.append(str(error)))
                             prefix = f"{app_env}-{name}-{attempt}"
                             try:
-                                if app_env == "dev":
+                                if name not in AUTH_CASES:
+                                    page.goto("/")
+                                elif app_env == "dev":
                                     reset = control.post("/api/test/reset", data={"email": "qa1@buglab.test"}, headers={"X-Test-Token": token})
                                     assert reset.status == 200
                                     page.goto("/login")
@@ -298,7 +392,8 @@ def main():
                                     tid(page, "signup-email").fill(f"{secrets.token_hex(8)}@buglab.test")
                                     tid(page, "signup-password").fill(password)
                                     tid(page, "signup-submit").click()
-                                expect(tid(page, "user-menu")).to_be_visible()
+                                if name in AUTH_CASES:
+                                    expect(tid(page, "user-menu")).to_be_visible()
                                 observations = run(page)
                                 assert not page_errors, "Unexpected browser runtime error"
                                 page.screenshot(path=str(output / f"{prefix}.png"), full_page=True)

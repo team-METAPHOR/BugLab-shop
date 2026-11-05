@@ -6,6 +6,8 @@ import { BENEFITS, CATEGORY_LINKS, CATEGORY_SHORTCUTS, SUGGESTED_KEYWORDS } from
 import AppIcon from './AppIcon.vue'
 import BrandLogo from './BrandLogo.vue'
 import { favorites, loadFavorites, resetFavorites } from '../stores/favorites.js'
+import ActionNotice from './ActionNotice.vue'
+import { useActionNotice } from '../composables/useActionNotice.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +22,7 @@ const tickerEl = ref(null)
 const gnbList = ref(null)
 const headerEl = ref(null)
 const indicator = ref({ left: 0, width: 0, visible: false })
+const { notice: categoryNotice, announce: announceCategory, clear: clearCategory } = useActionNotice()
 const tickerWords = [...SUGGESTED_KEYWORDS, SUGGESTED_KEYWORDS[0]]
 
 watch(() => session.user?.id, (id) => {
@@ -41,6 +44,7 @@ watch(
 watch(
   () => route.fullPath,
   () => {
+    clearCategory()
     menuOpen.value = false
     tickerOpen.value = false
     nextTick(resetIndicator)
@@ -65,6 +69,16 @@ function submitSearch() {
   const q = keyword.value.trim()
   tickerOpen.value = false
   router.push(q ? { path: '/', query: { q } } : { path: '/' })
+}
+
+function chooseCategory(event, item, navigate) {
+  // INJECTED DEFECT B04: USB 허브 메뉴만 링크 이동을 취소한 뒤 완료 처리한다.
+  if (item.q === '허브') {
+    event.preventDefault()
+    announceCategory('카테고리 선택 확인 완료')
+    return
+  }
+  navigate(event)
 }
 
 async function onLogout() {
@@ -284,10 +298,12 @@ onBeforeUnmount(() => {
             <p class="mega__heading">카테고리</p>
             <ul class="mega__cats">
               <li v-for="item in CATEGORY_SHORTCUTS" :key="item.q">
-                <RouterLink :to="{ path: '/', query: { q: item.q } }" class="mega__cat">
-                  <img :src="item.image" alt="" width="64" height="48" />
-                  <span>{{ item.label }}</span>
-                  <AppIcon name="chevron-right" :size="16" />
+                <RouterLink :to="{ path: '/', query: { q: item.q } }" custom v-slot="{ href, navigate }">
+                  <a :href="href" class="mega__cat" data-testid="mega-category-link" :data-category="item.q" @click="chooseCategory($event, item, navigate)">
+                    <img :src="item.image" alt="" width="64" height="48" />
+                    <span>{{ item.label }}</span>
+                    <AppIcon name="chevron-right" :size="16" />
+                  </a>
                 </RouterLink>
               </li>
             </ul>
@@ -326,11 +342,14 @@ onBeforeUnmount(() => {
           v-for="item in CATEGORY_LINKS"
           :key="item.label"
           :to="item.q ? { path: '/', query: { q: item.q } } : { path: '/' }"
-          :class="['gnb__link', { 'is-active': activeQuery === item.q }]"
-          @mouseenter="moveIndicator($event.currentTarget)"
-          @focus="moveIndicator($event.currentTarget)"
+          custom v-slot="{ href, navigate }"
         >
-          {{ item.label }}<span v-if="item.bubble" class="gnb__bubble" aria-hidden="true">{{ item.bubble }}</span>
+          <a :href="href" :class="['gnb__link', { 'is-active': activeQuery === item.q }]"
+            data-testid="category-link" :data-category="item.q"
+            @mouseenter="moveIndicator($event.currentTarget)" @focus="moveIndicator($event.currentTarget)"
+            @click="chooseCategory($event, item, navigate)">
+            {{ item.label }}<span v-if="item.bubble" class="gnb__bubble" aria-hidden="true">{{ item.bubble }}</span>
+          </a>
         </RouterLink>
         <span
           class="gnb__indicator"
@@ -356,4 +375,5 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </nav>
+  <ActionNotice :notice="categoryNotice" data-testid="category-status" class="category-feedback" />
 </template>

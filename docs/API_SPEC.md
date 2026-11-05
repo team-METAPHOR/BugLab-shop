@@ -1,6 +1,6 @@
 # BugLab Shop API 명세서
 
-문서 버전: v2.0 (2026-11-05)
+문서 버전: v3.0 (2026-11-06)
 관련 문서: [기능 명세서](./FUNCTIONAL_SPEC.md) · [Playwright 실행 계약](./PLAYWRIGHT_CONTRACT.md)
 
 ## 1. 공통 규약
@@ -90,7 +90,7 @@
 | POST | `/api/auth/signup` | - | 모두 | 회원가입 + 로그인 |
 | POST | `/api/auth/login` | - | 모두 | 로그인 |
 | POST | `/api/auth/logout` | 선택 | 모두 | 로그아웃 |
-| GET | `/api/auth/me` | 필요 | 모두 | 현재 사용자 |
+| GET | `/api/auth/me` | 선택 | 모두 | 현재 사용자 또는 익명 상태 |
 | GET | `/api/products` | - | 모두 | 목록·검색 |
 | GET | `/api/products/:id` | - | 모두 | 상세 |
 | GET | `/api/cart` | 필요 | 모두 | 장바구니 조회 |
@@ -126,7 +126,9 @@
 요청 `{}`. 204. 서버 세션을 삭제하고 쿠키를 만료시킨다. 세션이 없어도 204.
 
 ### GET /api/auth/me
-200 `{ "user": User }` / 401 `UNAUTHENTICATED`
+- 로그인 상태: 200 `{ "user": User }`.
+- 비로그인·유효하지 않거나 만료·초기화된 세션: 200 `{ "user": null }`.
+- 세션 조회는 인증을 요구하지 않는다. 장바구니·찜 등 보호 API는 계속 비로그인 시 401 `UNAUTHENTICATED`를 반환한다.
 
 ### GET /api/products?q=
 - `q` 선택. 앞뒤 공백 제거 후 상품명 부분 일치(대소문자 무시). 비거나 없으면 전체.

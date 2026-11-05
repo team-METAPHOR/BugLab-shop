@@ -26,19 +26,19 @@ test('search replaces a populated result with an empty result', (t) => {
   assert.deepEqual(searchProducts(db, '냉장고').items, []);
 });
 
-test('mouse decrease retains cache, while another product recalculates a mixed cart', (t) => {
+test('quantity updates recalculate mixed carts, including mouse decreases', (t) => {
   const db = fixture(t);
   addItem(db, 1, { productId: 2, quantity: 2 });
   addItem(db, 1, { productId: 4, quantity: 2 });
   const mouse = updateItemQuantity(db, 1, '2', { quantity: 1 });
   assert.equal(mouse.items.find((item) => item.productId === 2).lineTotal, 18000);
-  assert.equal(mouse.subtotal, 120000);
+  assert.equal(mouse.subtotal, 102000);
   const hub = updateItemQuantity(db, 1, '4', { quantity: 1 });
   assert.equal(hub.subtotal, 60000);
   assert.throws(() => addItem(db, 1, { productId: 3 }), { code: 'OUT_OF_STOCK' });
 });
 
-test('duplicate coupon is rejected outside the intentional keyboard path', (t) => {
+test('duplicate coupons are rejected for every cart, including keyboards', (t) => {
   const db = fixture(t);
   addItem(db, 1, { productId: 4 });
   applyCoupon(db, 1, { code: ' save5000 ' });
@@ -46,7 +46,8 @@ test('duplicate coupon is rejected outside the intentional keyboard path', (t) =
   assert.equal(getCart(db, 1).total, 37000);
   addItem(db, 2, { productId: 1 });
   applyCoupon(db, 2, { code: 'SAVE5000' });
-  assert.equal(applyCoupon(db, 2, { code: 'SAVE5000' }).total, 20000);
+  assert.throws(() => applyCoupon(db, 2, { code: 'SAVE5000' }), { code: 'COUPON_ALREADY_APPLIED' });
+  assert.equal(getCart(db, 2).total, 25000);
 });
 
 test('favorite UUIDs are separate from product IDs; insert is idempotent and deletion is account-scoped', (t) => {
@@ -80,6 +81,18 @@ test('reset clears only the selected account cart, coupons, favorites and sessio
   await once(server, 'listening');
   const origin = `http://127.0.0.1:${server.address().port}`;
   try {
+    const currentUser = (session) => fetch(`${origin}/api/auth/me`, {
+      headers: session ? { Cookie: `${config.sessionCookieName}=${session}` } : {},
+    });
+    const anonymous = await currentUser();
+    assert.equal(anonymous.status, 200);
+    assert.deepEqual(await anonymous.json(), { user: null });
+    const invalid = await currentUser('invalid-session');
+    assert.equal(invalid.status, 200);
+    assert.deepEqual(await invalid.json(), { user: null });
+    const signedIn = await currentUser(firstSession);
+    assert.equal(signedIn.status, 200);
+    assert.deepEqual(await signedIn.json(), { user: { id: 1, email: 'qa1@buglab.test', name: 'QA 1' } });
     assert.equal((await fetch(`${origin}/api/cart/unknown`)).status, 404);
     assert.equal((await fetch(`${origin}/api/cart`)).status, 401);
     assert.equal((await fetch(`${origin}/api/favorites`)).status, 401);
@@ -97,9 +110,13 @@ test('reset clears only the selected account cart, coupons, favorites and sessio
     assert.equal(getFavorites(db, 1).items.length, 0);
     assert.equal(getCart(db, 2).total, 25000);
     assert.equal(getFavorites(db, 2).items.length, 1);
-    const me = (session) => fetch(`${origin}/api/auth/me`, { headers: { Cookie: `${config.sessionCookieName}=${session}` } });
-    assert.equal((await me(firstSession)).status, 401);
-    assert.equal((await me(secondSession)).status, 200);
+    // 세션 조회의 익명 응답 형식과 무관하게 보호 API로 세션 무효화를 확인한다.
+    const protectedCart = (session) => fetch(`${origin}/api/cart`, { headers: { Cookie: `${config.sessionCookieName}=${session}` } });
+    assert.equal((await protectedCart(firstSession)).status, 401);
+    assert.equal((await protectedCart(secondSession)).status, 200);
+    const resetUser = await currentUser(firstSession);
+    assert.equal(resetUser.status, 200);
+    assert.deepEqual(await resetUser.json(), { user: null });
   } finally {
     server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
