@@ -35,7 +35,7 @@ function escapeAttr(value) {
 function sdkScriptTag(sdk) {
   return (
     `<script src="${escapeAttr(sdk.scriptUrl)}" data-metaphor-project-key="${escapeAttr(sdk.projectKey)}" ` +
-    `data-metaphor-api-base="${escapeAttr(sdk.apiUrl)}" defer></script>`
+    `data-metaphor-api-base="${escapeAttr(sdk.apiUrl)}" data-metaphor-show-launcher="false" defer></script>`
   );
 }
 

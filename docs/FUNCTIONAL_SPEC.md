@@ -221,10 +221,11 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 ### 9.2 서버가 하는 일 (production, SDK 켬)
 - `index.html`을 보낼 때 `</head>` 앞에 다음 태그를 넣는다. 속성 값은 HTML 이스케이프한다.
   ```html
-  <script src="{METAPHOR_SDK_URL}" data-metaphor-project-key="{METAPHOR_PROJECT_KEY}" data-metaphor-api-base="{METAPHOR_API_URL}" defer></script>
+  <script src="{METAPHOR_SDK_URL}" data-metaphor-project-key="{METAPHOR_PROJECT_KEY}" data-metaphor-api-base="{METAPHOR_API_URL}" data-metaphor-show-launcher="false" defer></script>
   ```
 - CSP에 SDK 스크립트 origin을 `script-src`·`style-src`·`img-src`에, API origin을 `connect-src`에 추가한다. 그 외 origin은 허용하지 않는다. SDK가 iframe을 쓰게 되면 `frame-src`를 추가해야 한다.
 - 프로젝트 키는 브라우저에 노출되는 공개 키다. 비밀값을 넣지 않는다.
+- BugLab 자체 신고 버튼은 없다. `data-metaphor-show-launcher="false"`로 SDK의 상시 신고 버튼만 숨긴다. SDK의 자동 오류 감지·레이지클릭 신고 안내와 그 안내를 통한 신고는 유지한다. 이 옵션을 지원하는 SDK 배포가 필요하며 기존 0.1.0 파일은 지원하지 않는다.
 
 ### 9.3 프로그램 소유 확인 (dev/production 공통)
 
