@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../api/client.js'
+import BrandLogo from './BrandLogo.vue'
 
 const envLabel = ref('')
 
@@ -16,9 +17,17 @@ onMounted(async () => {
 
 <template>
   <footer class="site-footer">
+    <div class="site-footer__links">
+      <div class="site-footer__links-inner">
+        <RouterLink to="/">전체 상품</RouterLink>
+        <RouterLink to="/cart">장바구니</RouterLink>
+        <RouterLink to="/credits">이미지 출처</RouterLink>
+      </div>
+    </div>
+
     <div class="site-footer__inner">
       <div class="site-footer__brand">
-        <p class="site-footer__logo">BugLab Shop</p>
+        <BrandLogo />
         <p>책상 위 작업 환경을 위한 키보드·마우스·데스크 액세서리를 고릅니다.</p>
       </div>
 
@@ -30,10 +39,9 @@ onMounted(async () => {
       </div>
 
       <div class="site-footer__col">
-        <p class="site-footer__heading">쇼핑</p>
-        <RouterLink to="/">전체 상품</RouterLink>
-        <RouterLink to="/cart">장바구니</RouterLink>
-        <RouterLink to="/credits">이미지 출처</RouterLink>
+        <p class="site-footer__heading">쇼핑 혜택</p>
+        <p>장바구니 쿠폰 <strong>SAVE5000</strong></p>
+        <p>5,000원 즉시 할인 · 최소 주문 금액 없음</p>
       </div>
     </div>
 
