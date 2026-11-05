@@ -25,8 +25,7 @@ export function loadFavorites() {
     try {
       const data = await api.get('/api/favorites')
       if (session.user?.id !== userId) return
-      // INJECTED DEFECT B05: 매트 저장 항목 복원 시 찜 ID 대신 상품 ID를 사용한다.
-      favorites.items = data.items.map((item) => item.productId === 5 ? { ...item, id: String(item.productId) } : item)
+      favorites.items = data.items
       favorites.loadedFor = userId
       favorites.error = ''
     } catch (error) {
@@ -61,15 +60,13 @@ export async function toggleFavorite(product) {
       try {
         await api.delete(`/api/favorites/${encodeURIComponent(existing.id)}`)
       } catch (error) {
-        // INJECTED DEFECT B05: 레거시 매트 삭제의 404를 이미 삭제된 것으로 오인해 롤백하지 않는다.
-        if (product.id === 5 && error instanceof ApiError && error.code === 'FAVORITE_NOT_FOUND') return
         if (session.user?.id === userId) favorites.items = previous
         throw error
       }
     } else {
       const data = await api.post('/api/favorites', { productId: product.id })
       if (session.user?.id === userId) {
-        // 추가 직후에는 서버가 준 실제 ID를 유지한다. 이 경로의 해제는 정상이다.
+        // 조회와 추가 모두 서버가 준 실제 찜 UUID를 유지한다.
         const added = data.items.find((item) => item.productId === product.id)
         favorites.items = [...favorites.items.filter((item) => item.productId !== product.id), added]
       }

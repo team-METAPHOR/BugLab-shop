@@ -476,6 +476,12 @@ a.header-action:hover { background: var(--stone); }
 .notice { padding: var(--s2) var(--s3); border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line-strong); }
 .notice--error { background: var(--danger-soft); border-color: transparent; color: var(--danger); }
 .notice--success { background: var(--success-soft); border-color: transparent; color: var(--success); }
+.action-notice { min-height: 1.5em; font-size: 0.8125rem; color: var(--muted); }
+.action-notice.is-empty { visibility: hidden; }
+.category-feedback { padding: 0 var(--s3); text-align: center; background: var(--surface); }
+.delivery-feedback { position: fixed; bottom: var(--s3); left: 50%; transform: translateX(-50%); z-index: 110; padding: var(--s2) var(--s3); border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-2); pointer-events: none; }
+.restock-dialog { width: min(480px, 90vw); margin: auto; border: 1px solid var(--line-strong); }
+.restock-dialog::backdrop { background: rgb(28 30 29 / 48%); }
 .notice--loading { display: flex; align-items: center; gap: var(--s2); color: var(--muted); border-color: transparent; background: var(--stone); }
 .notice--loading::before { content: ''; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--ink); border-right-color: transparent; animation: spin 0.8s linear infinite; }
 .badge { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--s1); border-radius: 2px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; }

@@ -7,8 +7,10 @@ import { won } from '../utils/format.js'
 import { PHOTO_NOTES, PRODUCT_SPECS } from '../data/productSpecs.js'
 import AppIcon from '../components/AppIcon.vue'
 import ProductCard from '../components/ProductCard.vue'
-import { favorites, isFavorite, loadFavorites, toggleFavorite } from '../stores/favorites.js'
+import { favorites, isFavorite, loadFavorites } from '../stores/favorites.js'
 import { openDelivery } from '../stores/delivery.js'
+import ActionNotice from '../components/ActionNotice.vue'
+import { useActionNotice } from '../composables/useActionNotice.js'
 
 const COUPON_AMOUNT = 5000
 
@@ -21,7 +23,10 @@ const message = ref(null) // { status: 'success' | 'error', text }
 const zoom = ref({ active: false, x: 50, y: 50 })
 const zoomLocked = ref(false) // 버튼(키보드·터치)으로 켠 확대
 const activeTab = ref('info')
-const purchaseSoldOut = ref(null)
+const purchaseSoldOut = computed(() => product.value?.soldOut ?? true)
+const restockDialog = ref(null)
+const { notice: restockNotice, announce: announceRestock, clear: clearRestock } = useActionNotice()
+const { notice: favoriteNotice, announce: announceFavorite, clear: clearFavorite } = useActionNotice()
 const recommendations = ref([])
 let requestSeq = 0
 
@@ -30,6 +35,9 @@ const couponPrice = computed(() =>
 )
 
 async function load(id) {
+  restockDialog.value?.close()
+  clearRestock()
+  clearFavorite()
   const seq = ++requestSeq
   status.value = 'loading'
   product.value = null
@@ -40,8 +48,6 @@ async function load(id) {
     const loaded = await api.get(`/api/products/${encodeURIComponent(id)}`)
     if (seq !== requestSeq) return
     product.value = loaded
-    // INJECTED DEFECT B03: 재사용된 한정판 상세의 구매 영역은 이전 상품의 버튼 상태를 유지한다.
-    if (purchaseSoldOut.value === null || loaded.id !== 3) purchaseSoldOut.value = loaded.soldOut
     status.value = 'ready'
     if (recommendations.value.length === 0) {
       try { recommendations.value = (await api.get('/api/products')).items } catch { /* 추천만 생략한다. */ }
@@ -86,7 +92,14 @@ watch(() => session.user?.id, (id) => { if (id) loadFavorites().catch(() => {}) 
 
 function changeFavorite() {
   if (!session.user) { goLogin(); return }
-  toggleFavorite(product.value)
+  // INJECTED DEFECT B05: 상세의 찜 버튼은 확인 뒤 실제 토글 처리를 호출하지 않는다.
+  announceFavorite('찜 상태 확인 완료')
+}
+
+function openRestock() {
+  // INJECTED DEFECT B03: DOM 요소 대신 ref 객체에 open을 써서 신청창이 열리지 않는다.
+  restockDialog.open = true
+  announceRestock('재입고 알림 안내 확인 완료')
 }
 
 // 사진 확대: 마우스 위치를 확대 기준점으로 쓴다(마우스 포인터에서만).
@@ -236,6 +249,20 @@ onBeforeUnmount(() => { requestSeq++; tabObserver?.disconnect() })
           {{ purchaseSoldOut ? '품절' : '장바구니 담기' }}
         </button>
 
+        <template v-if="product.id === 3 && product.soldOut">
+          <button type="button" class="btn btn--ghost btn--block" data-testid="restock-open" @click="openRestock">재입고 알림 받기</button>
+          <ActionNotice :notice="restockNotice" data-testid="restock-status" />
+          <dialog ref="restockDialog" class="modal__panel restock-dialog" data-testid="restock-dialog" aria-labelledby="restock-title">
+            <div class="modal__head">
+              <h2 id="restock-title" class="modal__title">재입고 알림 신청</h2>
+              <button type="button" class="modal__close" aria-label="재입고 알림 닫기" @click="restockDialog.close()"><AppIcon name="close" :size="22" /></button>
+            </div>
+            <p>{{ product.name }}</p>
+            <p>데모에서는 실제 알림을 발송하지 않습니다.</p>
+            <button type="button" class="btn btn--primary btn--block" @click="restockDialog.close()">확인</button>
+          </dialog>
+        </template>
+
         <div class="detail__secondary-actions">
           <button type="button" :class="['btn', 'btn--ghost', { 'is-favorite': isFavorite(product.id) }]" data-testid="favorite-toggle"
             :aria-pressed="isFavorite(product.id)" :disabled="favorites.pending" @click="changeFavorite">
@@ -245,6 +272,7 @@ onBeforeUnmount(() => { requestSeq++; tabObserver?.disconnect() })
             <AppIcon name="truck" :size="18" /> 배송 안내
           </button>
         </div>
+        <ActionNotice :notice="favoriteNotice" data-testid="favorite-status" />
         <p v-if="favorites.error" class="notice notice--error" role="alert">{{ favorites.error }}</p>
 
         <div v-if="message" :class="['detail__message', `is-${message.status}`]" aria-live="polite">

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { clearSessionCookie, requireAuth, requireJson, setSessionCookie } from '../http.js';
+import { clearSessionCookie, requireJson, setSessionCookie } from '../http.js';
 import { createSession, deleteSession, login, signup, toUser } from '../services/authService.js';
 
 export function authRouter({ db, config }) {
@@ -29,8 +29,8 @@ export function authRouter({ db, config }) {
     res.status(204).end();
   });
 
-  router.get('/me', requireAuth, (req, res) => {
-    res.json({ user: toUser(req.user) });
+  router.get('/me', (req, res) => {
+    res.json({ user: req.user ? toUser(req.user) : null });
   });
 
   return router;

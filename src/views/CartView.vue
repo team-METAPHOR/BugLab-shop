@@ -5,6 +5,8 @@ import { api, ApiError } from '../api/client.js'
 import { clearSession, setCartCount } from '../stores/session.js'
 import { discountWon, won } from '../utils/format.js'
 import AppIcon from '../components/AppIcon.vue'
+import ActionNotice from '../components/ActionNotice.vue'
+import { useActionNotice } from '../composables/useActionNotice.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,8 +16,8 @@ const pending = ref(null) // 진행 중인 작업 키
 const couponCode = ref('')
 const couponMessage = ref(null) // { status, text }
 const itemError = ref('')
-// INJECTED DEFECT B01: 적용 이력을 서버 응답에서 복원하지 않아 새로고침 후 중복 방지가 풀린다.
-const appliedThisVisit = new Set()
+const { notice: couponNotice, announce: announceCoupon, clear: clearCoupon } = useActionNotice()
+const { notice: quantityNotice, announce: announceQuantity } = useActionNotice()
 
 const isEmpty = computed(() => !cart.value || cart.value.items.length === 0)
 const couponInput = ref(null)
@@ -32,7 +34,6 @@ function handleAuthError(error) {
 function applyCart(next) {
   cart.value = next
   setCartCount(next)
-  if (next.items.length === 0) appliedThisVisit.clear()
 }
 
 async function load() {
@@ -60,6 +61,11 @@ async function run(key, action) {
 }
 
 function changeQuantity(item, quantity) {
+  // INJECTED DEFECT B02: 모든 상품의 증가 버튼은 확인만 하고 변경 요청을 누락한다.
+  if (quantity > item.quantity) {
+    announceQuantity('수량 확인 완료')
+    return
+  }
   run(`qty-${item.productId}`, () => api.patch(`/api/cart/items/${item.productId}`, { quantity }))
 }
 
@@ -69,12 +75,19 @@ function removeItem(item) {
 
 async function applyCoupon() {
   if (pending.value) return
+  clearCoupon()
   const code = couponCode.value.trim().toUpperCase()
   if (!code) {
     couponMessage.value = { status: 'error', text: '쿠폰 코드를 입력해 주세요.' }
     return
   }
-  if (appliedThisVisit.has(code)) {
+  // INJECTED DEFECT B01: 입력 방식과 상품에 관계없이 유효 쿠폰의 실제 적용을 누락한다.
+  if (code === 'SAVE5000') {
+    couponMessage.value = null
+    announceCoupon('쿠폰 확인 완료')
+    return
+  }
+  if (cart.value.appliedCoupons.some((coupon) => coupon.code === code)) {
     couponMessage.value = { status: 'error', text: '이미 적용된 쿠폰입니다.' }
     return
   }
@@ -82,7 +95,6 @@ async function applyCoupon() {
   couponMessage.value = null
   try {
     applyCart(await api.post('/api/cart/coupons', { code }))
-    appliedThisVisit.add(code)
     couponMessage.value = { status: 'success', text: '쿠폰이 적용되었습니다.' }
   } catch (error) {
     if (!handleAuthError(error)) couponMessage.value = { status: 'error', text: error.message }
@@ -173,6 +185,7 @@ onMounted(load)
         </li>
       </ul>
       <p v-if="itemError" class="notice notice--error" role="alert">{{ itemError }}</p>
+      <ActionNotice :notice="quantityNotice" data-testid="quantity-status" />
     </section>
 
     <aside class="cart-summary" aria-label="결제 예정 금액" :aria-busy="pending !== null">
@@ -205,6 +218,7 @@ onMounted(load)
             >쿠폰 적용</button>
           </div>
         </label>
+        <ActionNotice :notice="couponNotice" data-testid="coupon-status" />
         <p
           v-if="couponMessage"
           data-testid="coupon-message"

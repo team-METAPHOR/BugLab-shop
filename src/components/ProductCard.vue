@@ -1,7 +1,7 @@
 <script setup>
 import { won } from '../utils/format.js'
 
-const props = defineProps({
+defineProps({
   product: { type: Object, required: true },
   index: { type: Number, default: 0 },
   quickAdd: { type: Boolean, default: false },
@@ -9,16 +9,10 @@ const props = defineProps({
 })
 const emit = defineEmits(['quick-add'])
 
-function delegatedQuickAdd(event) {
-  // INJECTED DEFECT B04: 허브 검색 카드의 레거시 위임 리스너가 버튼 리스너와 중복 실행된다.
-  if (props.product.id === 4 && event.target.closest('[data-testid="quick-add"]')) {
-    emit('quick-add', props.product)
-  }
-}
 </script>
 
 <template>
-  <li class="product-card" data-testid="product-card" :data-product-id="product.id" :style="{ '--i': index }" @click="delegatedQuickAdd">
+  <li class="product-card" data-testid="product-card" :data-product-id="product.id" :style="{ '--i': index }">
     <RouterLink :to="`/products/${product.id}`" :class="['product-card__link', { 'is-soldout': product.soldOut }]">
       <div class="product-card__image">
         <img :src="product.imageUrl" :alt="product.name" width="1000" height="750" decoding="async" />
