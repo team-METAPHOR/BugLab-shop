@@ -60,13 +60,10 @@ async function run(key, action) {
   }
 }
 
-function changeQuantity(item, quantity) {
-  // INJECTED DEFECT B02: 모든 상품의 증가 버튼은 확인만 하고 변경 요청을 누락한다.
-  if (quantity > item.quantity) {
-    announceQuantity('수량 확인 완료')
-    return
-  }
-  run(`qty-${item.productId}`, () => api.patch(`/api/cart/items/${item.productId}`, { quantity }))
+async function changeQuantity(item, quantity) {
+  const increasing = quantity > item.quantity
+  await run(`qty-${item.productId}`, () => api.patch(`/api/cart/items/${item.productId}`, { quantity }))
+  if (increasing) announceQuantity('수량 확인 완료')
 }
 
 function removeItem(item) {
@@ -81,26 +78,21 @@ async function applyCoupon() {
     couponMessage.value = { status: 'error', text: '쿠폰 코드를 입력해 주세요.' }
     return
   }
-  // INJECTED DEFECT B01: 입력 방식과 상품에 관계없이 유효 쿠폰의 실제 적용을 누락한다.
-  if (code === 'SAVE5000') {
-    couponMessage.value = null
-    announceCoupon('쿠폰 확인 완료')
-    return
-  }
   if (cart.value.appliedCoupons.some((coupon) => coupon.code === code)) {
     couponMessage.value = { status: 'error', text: '이미 적용된 쿠폰입니다.' }
-    return
+  } else {
+    pending.value = 'coupon'
+    couponMessage.value = null
+    try {
+      applyCart(await api.post('/api/cart/coupons', { code }))
+      couponMessage.value = { status: 'success', text: '쿠폰이 적용되었습니다.' }
+    } catch (error) {
+      if (!handleAuthError(error)) couponMessage.value = { status: 'error', text: error.message }
+    } finally {
+      pending.value = null
+    }
   }
-  pending.value = 'coupon'
-  couponMessage.value = null
-  try {
-    applyCart(await api.post('/api/cart/coupons', { code }))
-    couponMessage.value = { status: 'success', text: '쿠폰이 적용되었습니다.' }
-  } catch (error) {
-    if (!handleAuthError(error)) couponMessage.value = { status: 'error', text: error.message }
-  } finally {
-    pending.value = null
-  }
+  if (code === 'SAVE5000') announceCoupon('쿠폰 확인 완료')
 }
 
 // 쿠폰 안내 칩을 누르면 입력란을 채운다. 적용은 사용자가 버튼으로 한다.
