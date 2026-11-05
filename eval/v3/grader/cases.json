@@ -5,7 +5,7 @@
     "A": "defect",
     "B": "fixed"
   },
-  "fixed_source": "branch eval/v3-fixed (ba49b0c): 기준 d41f3b8에서 B01~B06만 INJECTED_DEFECTS.md 3절 방향으로 수정",
+  "fixed_source": "branch eval/v3-fixed (c70b4ad): 이 PR 브랜치와 화면 파일 4개만 다르며 B01~B06을 INJECTED_DEFECTS.md 3절 방향으로 수정. 수정 commit ba49b0c",
   "expected_outcome": {
     "defect": "symptom",
     "fixed": "no_symptom"

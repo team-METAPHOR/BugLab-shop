@@ -18,7 +18,7 @@
       "health_commit": null
     },
     "B": {
-      "source_commit": "ba49b0c",
+      "source_commit": "c70b4ad",
       "bundle": ["/assets/index-C09LIhTl.css", "/assets/index-D9xm9VUW.js"],
       "deployments": {},
       "health_commit": null

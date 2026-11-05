@@ -61,7 +61,7 @@ health `commit`이 실제 값을 반환하기 전까지는 번들 파일명으�
 - [ ] health가 실제 commit을 반환하도록 배포에 `BUILD_COMMIT` 연결(코드 반영), 배포 후 production·dev 응답과 번들 파일명 확인
 - [ ] dev의 현재 health·번들이 기준과 같은지 서버에서 확인
 - [ ] 원격 워커의 dev 접근 경로와 TLS 조건 확정
-- [x] 같은 기능의 수정 대조군 코드: `eval/v3-fixed` 브랜치(`ba49b0c`), 기준 commit에서 B01~B06만 수정
+- [x] 같은 기능의 수정 대조군 코드: `eval/v3-fixed` 브랜치(`c70b4ad`), 기준 대비 화면 파일 4개(B01~B06 수정)만 다름
 - [x] 수정 대조군 배포 워크플로: `deploy-eval-b.yml` (`eval/*` 브랜치만, 별도 디렉터리·3300 dev 서비스)
 - [ ] 수정 대조군 서버 1회 설정과 배포 ([eval/v3 README](../eval/v3/README.md) 대상 B 배포)
 - [x] 평가 manifest와 입력/정답 분리: [eval/v3](../eval/v3/README.md)
