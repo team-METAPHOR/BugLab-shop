@@ -124,8 +124,9 @@ export function updateItemQuantity(db, userId, productIdParam, body) {
 
     db.prepare('UPDATE cart_items SET quantity = ? WHERE id = ?').run(quantity, item.id);
     const recalculated = computeSubtotal(db, userId);
-    // INJECTED DEFECT B02
-    writeSubtotal(db, userId, Math.max(cachedSubtotal(db, userId), recalculated));
+    // INJECTED DEFECT B02: 마우스 수량 감소 경로만 합계 캐시 갱신을 놓친다.
+    const subtotal = item.product_id === 2 && quantity < item.quantity ? cachedSubtotal(db, userId) : recalculated;
+    writeSubtotal(db, userId, subtotal);
   });
   return getCart(db, userId);
 }
@@ -157,9 +158,10 @@ export function applyCoupon(db, userId, body) {
     const itemCount = db.prepare('SELECT COUNT(*) AS n FROM cart_items WHERE user_id = ?').get(userId).n;
     if (itemCount === 0) throw new ApiError(409, 'CART_EMPTY');
 
-    const applied = db.prepare('SELECT code FROM cart_coupons WHERE user_id = ?').all(userId);
-    // INJECTED DEFECT B01
-    if (applied.includes(coupon.code)) throw new ApiError(409, 'COUPON_ALREADY_APPLIED');
+    const applied = db.prepare('SELECT 1 FROM cart_coupons WHERE user_id = ? AND code = ?').get(userId, code);
+    const keyboard = db.prepare('SELECT 1 FROM cart_items WHERE user_id = ? AND product_id = 1').get(userId);
+    // INJECTED DEFECT B01: 키보드 쿠폰 경로는 화면의 중복 방지 상태만 신뢰한다.
+    if (applied && !keyboard) throw new ApiError(409, 'COUPON_ALREADY_APPLIED');
 
     db.prepare('INSERT INTO cart_coupons (user_id, code, amount, applied_at) VALUES (?, ?, ?, ?)').run(
       userId,

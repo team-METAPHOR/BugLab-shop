@@ -14,6 +14,8 @@ const pending = ref(null) // 진행 중인 작업 키
 const couponCode = ref('')
 const couponMessage = ref(null) // { status, text }
 const itemError = ref('')
+// INJECTED DEFECT B01: 적용 이력을 서버 응답에서 복원하지 않아 새로고침 후 중복 방지가 풀린다.
+const appliedThisVisit = new Set()
 
 const isEmpty = computed(() => !cart.value || cart.value.items.length === 0)
 const couponInput = ref(null)
@@ -30,6 +32,7 @@ function handleAuthError(error) {
 function applyCart(next) {
   cart.value = next
   setCartCount(next)
+  if (next.items.length === 0) appliedThisVisit.clear()
 }
 
 async function load() {
@@ -66,15 +69,20 @@ function removeItem(item) {
 
 async function applyCoupon() {
   if (pending.value) return
-  const code = couponCode.value.trim()
+  const code = couponCode.value.trim().toUpperCase()
   if (!code) {
     couponMessage.value = { status: 'error', text: '쿠폰 코드를 입력해 주세요.' }
+    return
+  }
+  if (appliedThisVisit.has(code)) {
+    couponMessage.value = { status: 'error', text: '이미 적용된 쿠폰입니다.' }
     return
   }
   pending.value = 'coupon'
   couponMessage.value = null
   try {
     applyCart(await api.post('/api/cart/coupons', { code }))
+    appliedThisVisit.add(code)
     couponMessage.value = { status: 'success', text: '쿠폰이 적용되었습니다.' }
   } catch (error) {
     if (!handleAuthError(error)) couponMessage.value = { status: 'error', text: error.message }

@@ -1,6 +1,6 @@
 # BugLab Shop 서버
 
-BugLab Shop의 API 서버(인증·상품·장바구니·쿠폰)이자, 빌드된 프론트엔드(`dist/`)를 같은 origin에서 서빙하는 정적 서버다.
+BugLab Shop의 API 서버(인증·상품·장바구니·쿠폰·찜)이자, 빌드된 프론트엔드(`dist/`)를 같은 origin에서 서빙하는 정적 서버다.
 계약은 [API 명세서](../docs/API_SPEC.md), [기능 명세서](../docs/FUNCTIONAL_SPEC.md), [Playwright 실행 계약](../docs/PLAYWRIGHT_CONTRACT.md)을 따른다.
 
 - Node.js 22.13 이상(ESM), Express 5, `node:sqlite`(DatabaseSync). 네이티브 빌드 의존성 없음.
@@ -28,7 +28,7 @@ npm --prefix server run start:prod
 | `dev` | `--watch` 모드, `.env.dev` 로드. 루트의 Vite 개발 서버(5173)가 `/api`를 `127.0.0.1:3100`으로 프록시한다 |
 | `start:dev` | dev 서버 실행(`.env.dev` 로드) |
 | `start:prod` | production 서버 실행(`.env.production` 로드) |
-| `reset:prod-demo` | production DB에서 `DEMO_ACCOUNT_EMAIL` 계정의 장바구니·쿠폰 적용 이력 초기화 |
+| `reset:prod-demo` | production DB에서 `DEMO_ACCOUNT_EMAIL` 계정의 장바구니·쿠폰·찜 초기화 |
 
 `.env.*` 파일이 없으면 셸 환경변수만 사용한다. 셸에 이미 있는 값이 파일 값보다 우선한다.
 `APP_ENV` 기본값이 `dev`이므로 `start:prod`는 `.env.production`(또는 셸)에 `APP_ENV=production`이 있어야 운영 모드로 뜬다.
@@ -59,7 +59,7 @@ dev에서 `TEST_CONTROL_TOKEN` 또는 `TEST_ACCOUNT_PASSWORD`가 없으면 서�
 3. 계정 시드: dev는 `qa1`/`qa2`(테스트 계정, 비밀번호는 매 시작 시 `TEST_ACCOUNT_PASSWORD`로 갱신), production은 `DEMO_ACCOUNT_*`가 있으면 데모 계정.
 4. 만료된 세션과 오래된 로그인 실패 기록을 지운다(이후 1시간마다).
 
-`/api/test/reset`은 해당 테스트 계정의 장바구니·쿠폰 이력과 함께 **세션도 지운다**. 초기화한 뒤에 로그인해야 한다.
+`/api/test/reset`은 해당 테스트 계정의 장바구니·쿠폰·찜과 함께 **세션도 지운다**. 초기화한 뒤에 로그인해야 한다. 기존 DB는 시작 시 찜 테이블이 추가되며 상품·계정·장바구니를 삭제하지 않는다.
 
 ## 디렉터리 구조
 

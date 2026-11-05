@@ -5,6 +5,7 @@ import { logout, session } from '../stores/session.js'
 import { BENEFITS, CATEGORY_LINKS, CATEGORY_SHORTCUTS, SUGGESTED_KEYWORDS } from '../data/storefront.js'
 import AppIcon from './AppIcon.vue'
 import BrandLogo from './BrandLogo.vue'
+import { favorites, loadFavorites, resetFavorites } from '../stores/favorites.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +21,11 @@ const gnbList = ref(null)
 const headerEl = ref(null)
 const indicator = ref({ left: 0, width: 0, visible: false })
 const tickerWords = [...SUGGESTED_KEYWORDS, SUGGESTED_KEYWORDS[0]]
+
+watch(() => session.user?.id, (id) => {
+  resetFavorites()
+  if (id) loadFavorites().catch(() => {})
+}, { immediate: true })
 
 const activeQuery = computed(() =>
   route.path === '/' ? (typeof route.query.q === 'string' ? route.query.q.trim() : '') : null,
@@ -229,6 +235,10 @@ onBeforeUnmount(() => {
       </div>
 
       <nav class="header-actions" aria-label="사용자 메뉴">
+        <RouterLink to="/favorites" class="header-action" data-testid="favorites-link" aria-label="찜한 상품">
+          <AppIcon name="heart" :size="28" />
+          <span class="header-action__label">찜 <span v-if="session.user" data-testid="favorites-count">{{ favorites.items.length }}</span></span>
+        </RouterLink>
         <div v-if="session.user" class="header-action header-action--user">
           <AppIcon name="user" :size="30" />
           <span class="header-action__label user-name" data-testid="user-menu">{{ session.user.name }}님</span>

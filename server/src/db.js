@@ -66,6 +66,14 @@ CREATE TABLE IF NOT EXISTS cart_coupons (
   applied_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_cart_coupons_user ON cart_coupons(user_id);
+
+CREATE TABLE IF NOT EXISTS favorites (
+  id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  created_at INTEGER NOT NULL,
+  UNIQUE (user_id, product_id)
+);
 `;
 
 export const PRODUCTS = [

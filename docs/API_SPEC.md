@@ -1,6 +1,6 @@
 # BugLab Shop API 명세서
 
-문서 버전: v1.0 (2026-11-04)
+문서 버전: v2.0 (2026-11-05)
 관련 문서: [기능 명세서](./FUNCTIONAL_SPEC.md) · [Playwright 실행 계약](./PLAYWRIGHT_CONTRACT.md)
 
 ## 1. 공통 규약
@@ -13,7 +13,7 @@
 - CORS 헤더를 보내지 않는다.
 - 모든 응답에 `Cache-Control: no-store`(API 한정).
 - 금액은 원 단위 정수.
-- 정의되지 않은 `/api/*` 경로는 `404 NOT_FOUND`. 단, 인증이 필요한 `/api/cart` 아래의 미정의 경로는 인증 검사가 먼저 실행되어 비로그인 시 `401 UNAUTHENTICATED`가 된다.
+- 정의되지 않은 `/api/*` 경로는 로그인 여부와 무관하게 `404 NOT_FOUND`. 정의된 보호 API는 비로그인 시 `401 UNAUTHENTICATED`다.
 
 ### 오류 형식
 
@@ -31,6 +31,7 @@
 | 404 | `NOT_FOUND` | 요청한 리소스를 찾을 수 없습니다. |
 | 404 | `PRODUCT_NOT_FOUND` | 상품을 찾을 수 없습니다. |
 | 404 | `CART_ITEM_NOT_FOUND` | 장바구니에 없는 상품입니다. |
+| 404 | `FAVORITE_NOT_FOUND` | 찜 목록에 없는 상품입니다. |
 | 404 | `COUPON_NOT_FOUND` | 존재하지 않는 쿠폰입니다. |
 | 409 | `EMAIL_TAKEN` | 이미 가입된 이메일입니다. |
 | 409 | `OUT_OF_STOCK` | 품절된 상품입니다. |
@@ -97,6 +98,9 @@
 | PATCH | `/api/cart/items/:productId` | 필요 | 모두 | 수량 변경 |
 | DELETE | `/api/cart/items/:productId` | 필요 | 모두 | 삭제 |
 | POST | `/api/cart/coupons` | 필요 | 모두 | 쿠폰 적용 |
+| GET | `/api/favorites` | 필요 | 모두 | 계정별 찜 목록 |
+| POST | `/api/favorites` | 필요 | 모두 | 찜 추가(같은 상품 중복 저장 안 함) |
+| DELETE | `/api/favorites/:favoriteId` | 필요 | 모두 | 찜 항목 UUID로 해제 |
 | POST | `/api/test/reset` | `X-Test-Token` | dev만 | 테스트 계정 초기화 |
 
 ## 4. 상세
@@ -153,9 +157,21 @@
 - 200 `Cart`
 - 400 `VALIDATION_ERROR`(빈 코드), 404 `COUPON_NOT_FOUND`, 409 `CART_EMPTY`, 409 `COUPON_ALREADY_APPLIED`
 
+### GET /api/favorites
+200 `{ "items": [{ "id": "<UUID>", "productId": 5, "product": Product }] }`.
+본인 계정의 항목만 생성 순서로 반환한다. 빈 목록은 `items: []`.
+
+### POST /api/favorites
+요청 `{ "productId": 5 }`. 200으로 위 목록 객체 반환. 이미 저장된 상품은 동일 항목을 유지한다.
+400 `VALIDATION_ERROR`, 404 `PRODUCT_NOT_FOUND`. 서버는 상품 5를 포함해 동일하게 정상 동작한다.
+
+### DELETE /api/favorites/:favoriteId
+요청 `{}`. URL 인자는 상품 ID가 아니라 **찜 항목의 UUID**다.
+200으로 남은 목록 객체 반환. 없거나 타인 소유 ID는 모두 404 `FAVORITE_NOT_FOUND`.
+
 ### POST /api/test/reset (dev 전용)
 헤더 `X-Test-Token: <TEST_CONTROL_TOKEN>`, 요청 `{ "email": "qa1@buglab.test" }`
-- 해당 테스트 계정의 장바구니 상품·쿠폰 적용 이력·세션·로그인 실패 카운터를 지운다. 다른 계정은 건드리지 않는다.
+- 해당 테스트 계정의 장바구니 상품·쿠폰 적용 이력·찜·세션·로그인 실패 카운터를 지운다. 다른 계정은 건드리지 않는다.
 - 200 `{ "email": "qa1@buglab.test", "cart": Cart(빈 장바구니) }`
 - 401 `TEST_TOKEN_INVALID`(상수 시간 비교), 403 `NOT_TEST_ACCOUNT`, 404 `NOT_FOUND`(없는 계정)
 - `APP_ENV=production`에서는 라우트 자체가 없다 → 404 `NOT_FOUND`.

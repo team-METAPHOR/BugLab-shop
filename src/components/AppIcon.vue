@@ -34,6 +34,9 @@ defineProps({
       <circle cx="12" cy="8" r="4" />
       <path d="M4.5 20.5c1.2-3.7 4-5.5 7.5-5.5s6.3 1.8 7.5 5.5" />
     </template>
+    <template v-else-if="name === 'heart'">
+      <path d="M20.5 5.5a5.2 5.2 0 0 0-7.4 0L12 6.6l-1.1-1.1a5.2 5.2 0 0 0-7.4 7.4L12 21l8.5-8.1a5.2 5.2 0 0 0 0-7.4Z" />
+    </template>
     <template v-else-if="name === 'cart'">
       <path d="M2.5 4h2.2l2.4 11.1a1.8 1.8 0 0 0 1.8 1.4h8.4a1.8 1.8 0 0 0 1.7-1.3L21 8H6" />
       <circle cx="9.5" cy="20" r="1.3" />

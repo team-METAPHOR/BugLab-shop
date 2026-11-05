@@ -7,6 +7,7 @@ const MESSAGES = {
   NOT_FOUND: '요청한 리소스를 찾을 수 없습니다.',
   PRODUCT_NOT_FOUND: '상품을 찾을 수 없습니다.',
   CART_ITEM_NOT_FOUND: '장바구니에 없는 상품입니다.',
+  FAVORITE_NOT_FOUND: '찜 목록에 없는 상품입니다.',
   COUPON_NOT_FOUND: '존재하지 않는 쿠폰입니다.',
   EMAIL_TAKEN: '이미 가입된 이메일입니다.',
   OUT_OF_STOCK: '품절된 상품입니다.',
