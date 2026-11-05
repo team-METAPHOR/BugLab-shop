@@ -1,0 +1,100 @@
+name: Deploy eval target B
+
+# Deploy the evaluation control build (target B) to its own directory and dev service.
+# Never touches the production/dev shop directories. Run manually:
+#   gh workflow run deploy-eval-b.yml --ref eval/v3-fixed
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-buglab
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TARGET_DIR: /home/ubuntu/buglab-eval-b
+  SERVICE: buglab-eval-b.service
+  PORT: "3300"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Allow evaluation branches only
+        run: |
+          case "$GITHUB_REF_NAME" in
+            eval/*) ;;
+            *) echo "Target B deploys only eval/* branches, got $GITHUB_REF_NAME"; exit 1 ;;
+          esac
+
+      - name: Checkout the requested branch
+        uses: actions/checkout@v4
+
+      - name: Start ssh-agent with the deploy key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Trust the server host key
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Record the deployed commit
+        # .git is not synced, so /api/health reads the commit from this file.
+        run: git rev-parse --short HEAD > BUILD_COMMIT
+
+      - name: Check the one-time server setup
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        # Setup steps are in eval/v3/README.md. Fail instead of creating anything implicitly.
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" "test -f '$TARGET_DIR/server/.env.dev' && systemctl cat '$SERVICE' >/dev/null" \
+            || { echo "Target B is not set up on the server; see eval/v3/README.md"; exit 1; }
+
+      - name: Sync code to the target B directory
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            --exclude='server/node_modules/' \
+            --exclude='server/.env.production' \
+            --exclude='server/.env.dev' \
+            --exclude='server/data/' \
+            ./ "$SSH_USER@$SSH_HOST:$TARGET_DIR/"
+
+      - name: Install, build, and restart target B
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" "TARGET_DIR='$TARGET_DIR' SERVICE='$SERVICE' bash -se" <<'REMOTE'
+          set -euo pipefail
+          cd "$TARGET_DIR"
+          npm ci --no-audit --no-fund
+          npm --prefix server ci --no-audit --no-fund
+          npm run build
+          sudo /usr/bin/systemctl restart "$SERVICE"
+          REMOTE
+
+      - name: Health check target B
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          for i in $(seq 1 10); do
+            body=$(ssh "$SSH_USER@$SSH_HOST" "curl -s http://127.0.0.1:$PORT/api/health" || true)
+            case "$body" in *'"status":"ok"'*) echo "$body"; exit 0 ;; esac
+            echo "attempt $i: $body"; sleep 3
+          done
+          echo "target B health check failed"; exit 1
