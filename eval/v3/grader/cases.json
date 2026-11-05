@@ -1,0 +1,132 @@
+{
+  "version": "v3.0",
+  "note": "채점·하네스 전용. 모델 입력·서비스 페이지·URL에 넣지 않는다.",
+  "targets": {
+    "A": "defect",
+    "B": "fixed"
+  },
+  "fixed_source": "branch eval/v3-fixed (ba49b0c): 기준 d41f3b8에서 B01~B06만 INJECTED_DEFECTS.md 3절 방향으로 수정",
+  "expected_outcome": {
+    "defect": "symptom",
+    "fixed": "no_symptom"
+  },
+  "cases": [
+    {
+      "input": "R01",
+      "defect": "B01",
+      "defect_reference": "docs/INJECTED_DEFECTS.md 1·3절 B01",
+      "login": true,
+      "plan": [
+        { "goto": "/products/1", "nav": "full_load" },
+        { "wait_visible": { "testid": "product-price" } },
+        { "click": { "testid": "add-to-cart" }, "nav": "none" },
+        { "wait_text": { "testid": "add-to-cart-message" }, "text": "장바구니에 담았습니다." },
+        { "click": { "testid": "go-to-cart" }, "nav": "spa" },
+        { "wait_visible": { "testid": "cart-item", "attrs": { "data-product-id": "1" } } },
+        { "fill": { "testid": "coupon-input" }, "value": "SAVE5000" },
+        { "click": { "testid": "apply-coupon" }, "nav": "none" }
+      ],
+      "completion": { "testid": "coupon-status", "text": "쿠폰 확인 완료" },
+      "expected": [
+        { "name": "할인 금액 표시", "text": { "testid": "cart-discount" }, "equals": "-5,000원" },
+        { "name": "최종 금액 표시", "text": { "testid": "cart-total" }, "equals": "25,000원" },
+        { "name": "적용 쿠폰 목록", "count": { "css": "[data-testid=\"applied-coupons\"] li" }, "equals": 1 },
+        { "name": "서버 장바구니", "api": "/api/cart", "json": { "discount": 5000, "total": 25000, "appliedCoupons.length": 1 } }
+      ]
+    },
+    {
+      "input": "R02",
+      "defect": "B02",
+      "defect_reference": "docs/INJECTED_DEFECTS.md 1·3절 B02",
+      "login": true,
+      "plan": [
+        { "goto": "/products/2", "nav": "full_load" },
+        { "wait_visible": { "testid": "product-price" } },
+        { "click": { "testid": "add-to-cart" }, "nav": "none" },
+        { "wait_text": { "testid": "add-to-cart-message" }, "text": "장바구니에 담았습니다." },
+        { "click": { "testid": "go-to-cart" }, "nav": "spa" },
+        { "wait_text": { "testid": "cart-quantity", "within": { "testid": "cart-item", "attrs": { "data-product-id": "2" } } }, "text": "1" },
+        { "click": { "testid": "quantity-increase", "within": { "testid": "cart-item", "attrs": { "data-product-id": "2" } } }, "nav": "none" }
+      ],
+      "completion": { "testid": "quantity-status", "text": "수량 확인 완료" },
+      "expected": [
+        { "name": "행 수량", "text": { "testid": "cart-quantity", "within": { "testid": "cart-item", "attrs": { "data-product-id": "2" } } }, "equals": "2" },
+        { "name": "행 합계(cart-line-total)", "text": { "testid": "cart-line-total", "within": { "testid": "cart-item", "attrs": { "data-product-id": "2" } } }, "equals": "36,000원" },
+        { "name": "상품 합계(cart-subtotal)", "text": { "testid": "cart-subtotal" }, "equals": "36,000원" },
+        { "name": "헤더 장바구니 수량", "text": { "testid": "cart-count" }, "equals": "2" },
+        { "name": "서버 장바구니", "api": "/api/cart", "json": { "items.0.quantity": 2, "subtotal": 36000 } }
+      ]
+    },
+    {
+      "input": "R03",
+      "defect": "B03",
+      "defect_reference": "docs/INJECTED_DEFECTS.md 1·3절 B03",
+      "login": false,
+      "plan": [
+        { "goto": "/products/3", "nav": "full_load" },
+        { "wait_text": { "testid": "product-name" }, "text": "BugLab 기계식 키보드 한정판" },
+        { "wait_text": { "testid": "stock-status" }, "text": "품절" },
+        { "click": { "testid": "restock-open" }, "nav": "none" }
+      ],
+      "completion": { "testid": "restock-status", "text": "재입고 알림 안내 확인 완료" },
+      "expected": [
+        { "name": "안내창 표시", "visible": { "testid": "restock-dialog" } },
+        { "name": "안내창 제목", "text": { "css": "#restock-title" }, "equals": "재입고 알림 신청" }
+      ]
+    },
+    {
+      "input": "R04",
+      "defect": "B04",
+      "defect_reference": "docs/INJECTED_DEFECTS.md 1·3절 B04",
+      "login": false,
+      "plan": [
+        { "goto": "/", "nav": "full_load" },
+        { "wait_visible": { "testid": "search-input" } },
+        { "click": { "testid": "category-link", "attrs": { "data-category": "허브" } }, "nav": "spa" }
+      ],
+      "completion": { "testid": "category-status", "text": "카테고리 선택 확인 완료" },
+      "expected": [
+        { "name": "이동한 주소", "url_path": "/", "url_query": { "q": "허브" } },
+        { "name": "검색 결과 개수", "count": { "testid": "product-card", "within": { "testid": "search-results" } }, "equals": 1 },
+        { "name": "USB 허브 카드", "visible": { "testid": "product-card", "attrs": { "data-product-id": "4" }, "within": { "testid": "search-results" } } }
+      ]
+    },
+    {
+      "input": "R05",
+      "defect": "B05",
+      "defect_reference": "docs/INJECTED_DEFECTS.md 1·3절 B05",
+      "login": true,
+      "plan": [
+        { "goto": "/products/5", "nav": "full_load" },
+        { "wait_text": { "testid": "favorite-toggle" }, "text": "찜하기" },
+        { "click": { "testid": "favorite-toggle" }, "nav": "none" }
+      ],
+      "completion": { "testid": "favorite-status", "text": "찜 상태 확인 완료" },
+      "expected": [
+        { "name": "버튼 문구", "text": { "testid": "favorite-toggle" }, "equals": "찜 해제" },
+        { "name": "버튼 상태(aria-pressed)", "attr": { "testid": "favorite-toggle" }, "attribute": "aria-pressed", "equals": "true" },
+        { "name": "헤더 찜 개수", "text": { "testid": "favorites-count" }, "equals": "1" },
+        { "name": "서버 찜 목록", "api": "/api/favorites", "json": { "items.length": 1, "items.0.productId": 5 } }
+      ]
+    },
+    {
+      "input": "R06",
+      "defect": "B06",
+      "defect_reference": "docs/INJECTED_DEFECTS.md 1·3절 B06",
+      "login": false,
+      "plan": [
+        { "goto": "/products/6", "nav": "full_load" },
+        { "wait_visible": { "testid": "product-price" } },
+        { "click": { "testid": "delivery-open" }, "nav": "none" },
+        { "wait_visible": { "testid": "delivery-dialog" } },
+        { "click": { "testid": "delivery-close" }, "nav": "none" }
+      ],
+      "completion": { "testid": "delivery-status", "text": "닫기 요청 확인 완료" },
+      "expected": [
+        { "name": "팝업 닫힘", "count": { "testid": "delivery-dialog" }, "equals": 0 },
+        { "name": "배경 조작 복구", "js": "!document.getElementById('app').inert" },
+        { "name": "스크롤 복구", "js": "document.body.style.overflow !== 'hidden'" }
+      ]
+    }
+  ]
+}

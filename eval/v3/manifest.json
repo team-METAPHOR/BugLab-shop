@@ -1,0 +1,78 @@
+{
+  "version": "v3.0",
+  "baseline_commit": "d41f3b8f7530311d7066903181359049122a505f",
+  "documents": {
+    "baseline": "docs/EVAL_BASELINE.md",
+    "contract": "docs/PLAYWRIGHT_CONTRACT.md 1~4절 (5절 기준 시나리오는 채점 자료)",
+    "normal_policy": "docs/FUNCTIONAL_SPEC.md"
+  },
+  "inputs": ["R01", "R02", "R03", "R04", "R05", "R06"],
+  "targets": {
+    "A": {
+      "source_commit": "d41f3b8f7530311d7066903181359049122a505f",
+      "bundle": ["/assets/index-C09LIhTl.css", "/assets/index-C1VdIsU0.js"],
+      "deployments": {
+        "production": { "origin": "https://shop.13-197-7-82.sslip.io", "tls": "유효한 인증서", "reset_api": false },
+        "dev": { "origin": "http://127.0.0.1:3100", "tls": "없음(EC2 내부 전용)", "reset_api": true, "worker_access": "미정" }
+      },
+      "health_commit": null
+    },
+    "B": {
+      "source_commit": "ba49b0c",
+      "bundle": ["/assets/index-C09LIhTl.css", "/assets/index-D9xm9VUW.js"],
+      "deployments": {},
+      "health_commit": null
+    }
+  },
+  "browser": {
+    "engine": "chromium",
+    "viewport": { "width": 1440, "height": 1000 },
+    "reduced_motion": "reduce",
+    "context_per_attempt": true
+  },
+  "accounts": {
+    "pool": ["qa1@buglab.test", "qa2@buglab.test"],
+    "password": "{{TEST_PASSWORD}}",
+    "parallel_rule": "동시에 실행하는 시도는 서로 다른 계정을 쓴다",
+    "login": ["goto /login", "fill login-email", "fill login-password", "click login-submit", "wait user-menu"]
+  },
+  "reset": {
+    "caller": "신뢰된 워커(브라우저 밖)",
+    "request": "POST /api/test/reset, X-Test-Token: {{TEST_CONTROL_TOKEN}}, {\"email\": <계정>}",
+    "success": 200,
+    "clears": ["장바구니 상품", "적용 쿠폰", "찜", "세션", "로그인 실패 기록"],
+    "client_state": "배송 팝업·재입고 안내창은 화면 상태라 새 BrowserContext로 초기화된다",
+    "on_failure": "inconclusive"
+  },
+  "allowed_requests": {
+    "GET": ["/", "/login", "/cart", "/favorites", "/products/:id", "/assets/*", "/images/*", "/favicon.svg",
+            "/api/health", "/api/auth/me", "/api/products", "/api/products/:id", "/api/cart", "/api/favorites"],
+    "POST": ["/api/auth/login", "/api/cart/items", "/api/cart/coupons", "/api/favorites"],
+    "PATCH": ["/api/cart/items/:productId"],
+    "DELETE": ["/api/favorites/:favoriteId", "/api/cart/items/:productId"],
+    "blocked_in_browser": ["/api/test/*", "회원가입", "위에 없는 쓰기 요청"]
+  },
+  "navigation_kinds": {
+    "full_load": "주소 직접 이동(page.goto). 시작 화면 준비에만 쓴다",
+    "spa": "화면 안의 링크·버튼 클릭으로 일어나는 앱 내부 이동. goto로 바꾸면 같은 재현이 아니다",
+    "reload": "브라우저 새로고침",
+    "history_back": "브라우저 뒤로 가기(page.go_back). 주소 이동으로 대체하지 않는다",
+    "none": "주소 변화가 없는 화면 조작"
+  },
+  "completion_signals": {
+    "coupon-status": "쿠폰 확인 완료",
+    "quantity-status": "수량 확인 완료",
+    "restock-status": "재입고 알림 안내 확인 완료",
+    "category-status": "카테고리 선택 확인 완료",
+    "favorite-status": "찜 상태 확인 완료",
+    "delivery-status": "닫기 요청 확인 완료"
+  },
+  "completion_rule": "확인 문구는 처리 완료 신호일 뿐 결과의 성공을 뜻하지 않는다. 결과는 별도로 관찰한다",
+  "cart_values": {
+    "cart-line-total": "상품 행 하나의 합계(단가×수량), cart-item[data-product-id] 안에서 찾는다",
+    "cart-subtotal": "모든 상품 행 합계의 합",
+    "cart-discount": "쿠폰 할인 합계, 할인이 있으면 -N원",
+    "cart-total": "할인을 뺀 최종 금액",
+    "cart-count": "헤더 배지, 장바구니 전체 수량 합계"
+  }
+}

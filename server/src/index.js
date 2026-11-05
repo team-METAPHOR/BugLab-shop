@@ -14,6 +14,13 @@ const DEMO_ACCOUNT_NAME = '데모 사용자';
 
 function resolveCommit(config) {
   if (config.buildCommit) return config.buildCommit;
+  // 배포는 .git 없이 rsync하므로 워크플로가 남긴 BUILD_COMMIT 파일을 먼저 읽는다.
+  try {
+    const recorded = fs.readFileSync(path.join(REPO_DIR, 'BUILD_COMMIT'), 'utf8').trim();
+    if (recorded) return recorded;
+  } catch {
+    // 로컬 개발 환경에는 파일이 없다.
+  }
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
       cwd: REPO_DIR,

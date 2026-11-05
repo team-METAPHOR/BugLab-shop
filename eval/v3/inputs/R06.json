@@ -1,0 +1,18 @@
+{
+  "id": "R06",
+  "report": {
+    "text": "원목 모니터 받침대 상세에서 '배송 안내'를 열고 오른쪽 위 X 버튼을 눌렀는데 '닫기 요청 확인 완료'만 나오고 팝업이 안 닫혀요. 뒤 화면도 안 눌려요.",
+    "page_path": "/products/6",
+    "screenshot": "screenshots/R06.png",
+    "reported_on": "production"
+  },
+  "expected_behavior": "배송 안내는 사이트 내 팝업이며 X·확인·Escape·배경 클릭으로 닫힌다. (기능 명세서 5.6)",
+  "test_data": {
+    "product": {
+      "id": 6,
+      "name": "원목 모니터 받침대"
+    },
+    "button": "X(배송 안내 닫기)"
+  },
+  "login_required": false
+}

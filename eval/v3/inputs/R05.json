@@ -1,0 +1,18 @@
+{
+  "id": "R05",
+  "report": {
+    "text": "로그인해서 데스크 매트 XL 상세 페이지에서 '찜하기'를 눌렀는데 '찜 상태 확인 완료'만 나오고 버튼은 그대로 '찜하기'예요. 위쪽 찜 개수도 0이에요.",
+    "page_path": "/products/5",
+    "screenshot": "screenshots/R05.png",
+    "reported_on": "production"
+  },
+  "expected_behavior": "상세의 찜 버튼은 찜하기/찜 해제를 전환하고, 찜 목록·개수와 서버 저장값이 함께 바뀐다. (기능 명세서 5.5·6절 상품 상세)",
+  "test_data": {
+    "product": {
+      "id": 5,
+      "name": "데스크 매트 XL"
+    },
+    "favorited_before": false
+  },
+  "login_required": true
+}
