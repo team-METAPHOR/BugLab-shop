@@ -1,0 +1,19 @@
+{
+  "id": "R04",
+  "report": {
+    "text": "메인 화면 위쪽 카테고리 메뉴에서 'USB 허브'를 눌렀는데 '카테고리 선택 확인 완료'만 나오고 화면이 그대로예요.",
+    "page_path": "/",
+    "screenshot": "screenshots/R04.png",
+    "reported_on": "production"
+  },
+  "expected_behavior": "상단 카테고리 메뉴의 USB 허브는 /?q=허브 검색 바로가기다. (기능 명세서 6절 공통 헤더)",
+  "test_data": {
+    "category_label": "USB 허브",
+    "search_keyword": "허브",
+    "matching_product": {
+      "id": 4,
+      "name": "7포트 USB 3.0 멀티 허브"
+    }
+  },
+  "login_required": false
+}

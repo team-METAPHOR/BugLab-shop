@@ -1,0 +1,18 @@
+{
+  "id": "R03",
+  "report": {
+    "text": "한정판 기계식 키보드 상세 페이지에서 '재입고 알림 받기'를 누르면 '재입고 알림 안내 확인 완료'라는 글자만 나오고 신청 창이 안 떠요.",
+    "page_path": "/products/3",
+    "screenshot": "screenshots/R03.png",
+    "reported_on": "production"
+  },
+  "expected_behavior": "한정판(/products/3)의 '재입고 알림 받기'는 비로그인도 안내창을 열 수 있고, 안내창 제목은 '재입고 알림 신청'이다. 품절 상품의 담기 버튼은 비활성화가 정상이다. (기능 명세서 2·5.7)",
+  "test_data": {
+    "product": {
+      "id": 3,
+      "name": "BugLab 기계식 키보드 한정판",
+      "sold_out": true
+    }
+  },
+  "login_required": false
+}

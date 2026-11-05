@@ -1,0 +1,701 @@
+{
+  "version": "v3.0",
+  "started_at": "2026-11-06T06:24:33+0900",
+  "targets": {
+    "A": {
+      "mode": "local",
+      "health": {
+        "status": "ok",
+        "env": "dev",
+        "commit": "local-A",
+        "startedAt": "2026-11-05T21:24:33.662Z"
+      },
+      "bundle": [
+        "/assets/index-C09LIhTl.css",
+        "/assets/index-C1VdIsU0.js"
+      ],
+      "bundle_matches": true
+    },
+    "B": {
+      "mode": "local",
+      "health": {
+        "status": "ok",
+        "env": "dev",
+        "commit": "local-B",
+        "startedAt": "2026-11-05T21:24:33.876Z"
+      },
+      "bundle": [
+        "/assets/index-C09LIhTl.css",
+        "/assets/index-D9xm9VUW.js"
+      ],
+      "bundle_matches": true
+    }
+  },
+  "runs": [
+    {
+      "target": "A",
+      "input": "R01",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "할인 금액 표시",
+        "최종 금액 표시",
+        "적용 쿠폰 목록",
+        "서버 장바구니"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R01",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "할인 금액 표시",
+        "최종 금액 표시",
+        "적용 쿠폰 목록",
+        "서버 장바구니"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R01",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "할인 금액 표시",
+        "최종 금액 표시",
+        "적용 쿠폰 목록",
+        "서버 장바구니"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R01",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "할인 금액 표시",
+        "최종 금액 표시",
+        "적용 쿠폰 목록",
+        "서버 장바구니"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R02",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "행 수량",
+        "행 합계(cart-line-total)",
+        "상품 합계(cart-subtotal)",
+        "헤더 장바구니 수량",
+        "서버 장바구니"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R02",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "행 수량",
+        "행 합계(cart-line-total)",
+        "상품 합계(cart-subtotal)",
+        "헤더 장바구니 수량",
+        "서버 장바구니"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R02",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "행 수량",
+        "행 합계(cart-line-total)",
+        "상품 합계(cart-subtotal)",
+        "헤더 장바구니 수량",
+        "서버 장바구니"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R02",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "행 수량",
+        "행 합계(cart-line-total)",
+        "상품 합계(cart-subtotal)",
+        "헤더 장바구니 수량",
+        "서버 장바구니"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R03",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "안내창 표시",
+        "안내창 제목"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R03",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "안내창 표시",
+        "안내창 제목"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R03",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "안내창 표시",
+        "안내창 제목"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R03",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "안내창 표시",
+        "안내창 제목"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "이동한 주소",
+        "검색 결과 개수"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "이동한 주소",
+        "검색 결과 개수"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "이동한 주소",
+        "검색 결과 개수"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "이동한 주소",
+        "검색 결과 개수"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R05",
+      "account": "qa1@buglab.test",
+      "outcome": "symptom",
+      "failed_expectations": [
+        "버튼 문구",
+        "버튼 상태(aria-pressed)",
+        "헤더 찜 개수",
+        "서버 찜 목록"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R05",
+      "account": "qa2@buglab.test",
+      "outcome": "symptom",
+      "failed_expectations": [
+        "버튼 문구",
+        "버튼 상태(aria-pressed)",
+        "헤더 찜 개수",
+        "서버 찜 목록"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R05",
+      "account": "qa1@buglab.test",
+      "outcome": "symptom",
+      "failed_expectations": [
+        "버튼 문구",
+        "버튼 상태(aria-pressed)",
+        "헤더 찜 개수",
+        "서버 찜 목록"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R05",
+      "account": "qa2@buglab.test",
+      "outcome": "symptom",
+      "failed_expectations": [
+        "버튼 문구",
+        "버튼 상태(aria-pressed)",
+        "헤더 찜 개수",
+        "서버 찜 목록"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R06",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "팝업 닫힘",
+        "배경 조작 복구",
+        "스크롤 복구"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R06",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "팝업 닫힘",
+        "배경 조작 복구",
+        "스크롤 복구"
+      ],
+      "attempt": 1
+    },
+    {
+      "target": "A",
+      "input": "R06",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "팝업 닫힘",
+        "배경 조작 복구",
+        "스크롤 복구"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "A",
+      "input": "R06",
+      "account": null,
+      "outcome": "symptom",
+      "failed_expectations": [
+        "팝업 닫힘",
+        "배경 조작 복구",
+        "스크롤 복구"
+      ],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R01",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R01",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R01",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R01",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R02",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R02",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R02",
+      "account": "qa1@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R02",
+      "account": "qa2@buglab.test",
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R03",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R03",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R03",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R03",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R04",
+      "account": null,
+      "spa_preserved": true,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R05",
+      "account": "qa1@buglab.test",
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R05",
+      "account": "qa2@buglab.test",
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R05",
+      "account": "qa1@buglab.test",
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R05",
+      "account": "qa2@buglab.test",
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R06",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R06",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 1
+    },
+    {
+      "target": "B",
+      "input": "R06",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    },
+    {
+      "target": "B",
+      "input": "R06",
+      "account": null,
+      "outcome": "no_symptom",
+      "failed_expectations": [],
+      "attempt": 2
+    }
+  ],
+  "cases": {
+    "R01": {
+      "A": {
+        "role": "defect",
+        "outcomes": [
+          "symptom",
+          "symptom",
+          "symptom",
+          "symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": true
+      },
+      "B": {
+        "role": "fixed",
+        "outcomes": [
+          "no_symptom",
+          "no_symptom",
+          "no_symptom",
+          "no_symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": true
+      },
+      "valid": true
+    },
+    "R02": {
+      "A": {
+        "role": "defect",
+        "outcomes": [
+          "symptom",
+          "symptom",
+          "symptom",
+          "symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": true
+      },
+      "B": {
+        "role": "fixed",
+        "outcomes": [
+          "no_symptom",
+          "no_symptom",
+          "no_symptom",
+          "no_symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": true
+      },
+      "valid": true
+    },
+    "R03": {
+      "A": {
+        "role": "defect",
+        "outcomes": [
+          "symptom",
+          "symptom",
+          "symptom",
+          "symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": null
+      },
+      "B": {
+        "role": "fixed",
+        "outcomes": [
+          "no_symptom",
+          "no_symptom",
+          "no_symptom",
+          "no_symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": null
+      },
+      "valid": true
+    },
+    "R04": {
+      "A": {
+        "role": "defect",
+        "outcomes": [
+          "symptom",
+          "symptom",
+          "symptom",
+          "symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": true
+      },
+      "B": {
+        "role": "fixed",
+        "outcomes": [
+          "no_symptom",
+          "no_symptom",
+          "no_symptom",
+          "no_symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": true
+      },
+      "valid": true
+    },
+    "R05": {
+      "A": {
+        "role": "defect",
+        "outcomes": [
+          "symptom",
+          "symptom",
+          "symptom",
+          "symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": null
+      },
+      "B": {
+        "role": "fixed",
+        "outcomes": [
+          "no_symptom",
+          "no_symptom",
+          "no_symptom",
+          "no_symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": null
+      },
+      "valid": true
+    },
+    "R06": {
+      "A": {
+        "role": "defect",
+        "outcomes": [
+          "symptom",
+          "symptom",
+          "symptom",
+          "symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": null
+      },
+      "B": {
+        "role": "fixed",
+        "outcomes": [
+          "no_symptom",
+          "no_symptom",
+          "no_symptom",
+          "no_symptom"
+        ],
+        "as_expected": true,
+        "spa_preserved": null
+      },
+      "valid": true
+    }
+  },
+  "environment_valid": true
+}
