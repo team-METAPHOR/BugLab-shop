@@ -9,7 +9,7 @@ import NotFoundView from './views/NotFoundView.vue'
 import CreditsView from './views/CreditsView.vue'
 
 const routes = [
-  { path: '/', name: 'home', component: HomeView },
+  { path: '/', name: 'home', component: HomeView, meta: { wide: true } },
   { path: '/products/:id', name: 'product', component: ProductDetailView },
   { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
   { path: '/signup', name: 'signup', component: SignupView, meta: { guestOnly: true } },
