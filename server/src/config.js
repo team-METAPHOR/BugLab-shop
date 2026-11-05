@@ -17,6 +17,14 @@ function parseBool(value, fallback) {
   return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 }
 
+function loadVerificationToken(value) {
+  const token = nonEmpty(value);
+  if (token !== undefined && Buffer.byteLength(token, 'utf8') > 1024) {
+    throw new ConfigError('METAPHOR_VERIFY_TOKEN은 UTF-8 기준 1KB 이하여야 합니다.');
+  }
+  return token;
+}
+
 function parseHttpUrl(name, value) {
   let url;
   try {
@@ -121,5 +129,6 @@ export function loadConfig(env = process.env) {
         ? { email: demoEmail.trim().toLowerCase(), password: demoPassword }
         : undefined,
     metaphorSdk: loadMetaphorSdk(env, isDev),
+    metaphorVerifyToken: loadVerificationToken(env.METAPHOR_VERIFY_TOKEN),
   });
 }

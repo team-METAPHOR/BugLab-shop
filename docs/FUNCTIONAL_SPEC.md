@@ -226,7 +226,15 @@ BugLab Shop은 메타포 검증 플랫폼을 시연하기 위한 가상 쇼핑�
 - CSP에 SDK 스크립트 origin을 `script-src`·`style-src`·`img-src`에, API origin을 `connect-src`에 추가한다. 그 외 origin은 허용하지 않는다. SDK가 iframe을 쓰게 되면 `frame-src`를 추가해야 한다.
 - 프로젝트 키는 브라우저에 노출되는 공개 키다. 비밀값을 넣지 않는다.
 
-### 9.3 SDK 쪽 요구 (플랫폼 팀 참고)
+### 9.3 프로그램 소유 확인 (dev/production 공통)
+
+- `METAPHOR_VERIFY_TOKEN`이 있으면 `GET /.well-known/metaphor-verify.txt`는 200과 토큰 원문을 반환한다.
+- 응답은 `text/plain; charset=utf-8`, UTF-8 기준 1KB 이하이며 리다이렉트와 캐시를 사용하지 않는다. 토큰이 1KB를 넘으면 서버 시작 시 설정 오류로 종료한다.
+- 값이 없으면 404를 반환한다. 다른 dotfile 경로도 404를 유지한다.
+- 토큰은 메타포 프로그램의 소유 확인 화면에서 발급받은 공개 값이다. 환경변수 변경 후 서버를 재시작하고 대시보드에서 확인을 실행한다.
+- dev에서 소유 확인 경로를 지원해도 SDK는 계속 비활성이다.
+
+### 9.4 SDK 쪽 요구 (플랫폼 팀 참고)
 - **비활성 버튼 연타는 `click`으로 잡히지 않는다.** 2026-11-04 Playwright 실측(Chromium 156, WebKit 27.2, Firefox 157)에서 `disabled` 버튼(N01 품절 버튼)을 4번 눌렀을 때 `document` 캡처 리스너에 `pointerdown`·`pointerup`은 4번씩 도달했다. `mousedown`·`mouseup`·`click`은 0번이었다. 감지는 **`document`의 캡처 단계 `pointerdown`**으로 해야 한다. `event.target`은 비활성 버튼 자체로 확인됐다.
 - 같은 실측에서 시험용 스텁 SDK(레이지: 1초 안에 반경 30px 이내 3회, 데드: 1초 동안 DOM·주소 변화 없음)가 세 브라우저 모두에서 N01의 레이지클릭을, Chromium에서 단일 클릭의 데드클릭을 감지했다. 신고 요청은 CSP 오류 없이 API origin에 도달했다. 실제 SDK의 임계값은 플랫폼 팀이 정한다.
 - API는 쇼핑몰 origin을 CORS로 허용해야 한다(등록된 프로젝트의 origin만).

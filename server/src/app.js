@@ -142,6 +142,20 @@ export function createApp({ db, config, commit, startedAt }) {
     res.set(securityHeaders);
     next();
   });
+  // Only this exact dotfile route is public. Keep static dotfile protection and do not
+  // let missing verification files fall through to the SPA's index.html (HTTP 200).
+  app.get('/.well-known/metaphor-verify.txt', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.type('text/plain; charset=utf-8');
+    if (!config.metaphorVerifyToken) return res.status(404).send('Not Found\n');
+    return res.send(config.metaphorVerifyToken);
+  });
+  app.use((req, res, next) => {
+    if (req.path.split('/').some((part) => part.startsWith('.'))) {
+      return res.status(404).type('text/plain; charset=utf-8').send('Not Found\n');
+    }
+    next();
+  });
   app.use('/api', apiRouter({ db, config, commit, startedAt }));
   app.use(staticSite(config.staticDir, config.metaphorSdk));
   app.use((req, res) => {
