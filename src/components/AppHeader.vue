@@ -71,13 +71,14 @@ function submitSearch() {
   router.push(q ? { path: '/', query: { q } } : { path: '/' })
 }
 
-async function chooseCategory(event, item, navigate) {
-  await navigate(event)
+function chooseCategory(event, item, navigate) {
+  // INJECTED DEFECT B04: USB 허브 메뉴만 링크 이동을 취소한 뒤 완료 처리한다.
   if (item.q === '허브') {
-    // 경로 변경 때 확인 문구를 지우는 watcher가 먼저 실행된 뒤 갱신한다.
-    await nextTick()
+    event.preventDefault()
     announceCategory('카테고리 선택 확인 완료')
+    return
   }
+  navigate(event)
 }
 
 async function onLogout() {
