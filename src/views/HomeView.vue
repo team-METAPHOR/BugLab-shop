@@ -37,13 +37,30 @@ watch(query, (q) => load(q), { immediate: true })
 </script>
 
 <template>
-  <section v-if="!query" class="hero">
-    <div>
-      <p class="hero__eyebrow">11월 데스크 셋업 위크</p>
-      <h1 class="hero__title">책상 위를 가볍게,<br />작업은 더 빠르게</h1>
-      <p class="hero__text">키보드·마우스·액세서리 전 상품 무료 배송. 장바구니에서 쿠폰 SAVE5000을 사용해 보세요.</p>
-    </div>
-  </section>
+  <template v-if="!query">
+    <section class="hero">
+      <div class="hero__content">
+        <p class="hero__eyebrow">11월 데스크 셋업 위크</p>
+        <h1 class="hero__title">책상 위를 가볍게,<br />작업은 더 빠르게</h1>
+        <p class="hero__text">키보드·마우스·액세서리 전 상품 무료 배송. 장바구니에서 쿠폰 SAVE5000을 사용해 보세요.</p>
+      </div>
+    </section>
+
+    <ul class="benefits" aria-label="쇼핑 혜택">
+      <li class="benefits__item">
+        <strong>무료 배송</strong>
+        <span>금액 조건 없이 전 상품</span>
+      </li>
+      <li class="benefits__item">
+        <strong>7일 무료 반품</strong>
+        <span>받은 날부터 7일 이내</span>
+      </li>
+      <li class="benefits__item">
+        <strong>평일 당일 출고</strong>
+        <span>오후 2시 이전 주문 기준</span>
+      </li>
+    </ul>
+  </template>
 
   <section class="catalog" :aria-busy="status === 'loading'">
     <div class="catalog__head">

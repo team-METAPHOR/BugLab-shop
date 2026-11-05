@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api, ApiError } from '../api/client.js'
 import { clearSession, session, setCartCount } from '../stores/session.js'
 import { won } from '../utils/format.js'
+import { PHOTO_NOTES, PRODUCT_SPECS } from '../data/productSpecs.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -61,12 +62,17 @@ async function addToCart() {
   <p v-else-if="status === 'error'" class="notice notice--error" role="alert">상품 정보를 불러오지 못했습니다.</p>
 
   <article v-else-if="product" class="detail">
-    <div class="detail__image">
-      <img :src="product.imageUrl" :alt="product.name" width="400" height="300" />
-    </div>
+    <figure class="detail__image">
+      <img :src="product.imageUrl" :alt="product.name" width="1000" height="750" />
+      <figcaption v-if="PHOTO_NOTES[product.id]" class="detail__photo-note">{{ PHOTO_NOTES[product.id] }}</figcaption>
+    </figure>
 
     <div class="detail__info">
-      <RouterLink to="/" class="back-link">← 상품 목록</RouterLink>
+      <nav class="breadcrumb" aria-label="현재 위치">
+        <RouterLink to="/">홈</RouterLink>
+        <span aria-hidden="true">›</span>
+        <span>{{ product.category }}</span>
+      </nav>
       <p class="detail__category">{{ product.category }}</p>
       <h1 class="detail__name" data-testid="product-name">{{ product.name }}</h1>
       <p class="detail__price" data-testid="product-price">{{ won(product.price) }}</p>
@@ -80,10 +86,20 @@ async function addToCart() {
 
       <p class="detail__desc">{{ product.description }}</p>
 
-      <ul class="detail__perks">
-        <li>무료 배송</li>
-        <li>구매 후 7일 이내 무료 반품</li>
-      </ul>
+      <dl class="detail__shipping">
+        <div>
+          <dt>배송비</dt>
+          <dd>무료 배송</dd>
+        </div>
+        <div>
+          <dt>출고</dt>
+          <dd>평일 오후 2시 이전 주문 시 당일 출고</dd>
+        </div>
+        <div>
+          <dt>반품</dt>
+          <dd>받은 날부터 7일 이내 무료 반품</dd>
+        </div>
+      </dl>
 
       <button
         data-testid="add-to-cart"
@@ -107,5 +123,14 @@ async function addToCart() {
         </RouterLink>
       </div>
     </div>
+    <section v-if="PRODUCT_SPECS[product.id]" class="detail__specs" aria-labelledby="spec-title">
+      <h2 id="spec-title" class="detail__specs-title">상품 정보</h2>
+      <dl>
+        <div v-for="[label, value] in PRODUCT_SPECS[product.id]" :key="label">
+          <dt>{{ label }}</dt>
+          <dd>{{ value }}</dd>
+        </div>
+      </dl>
+    </section>
   </article>
 </template>

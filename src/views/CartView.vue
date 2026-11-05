@@ -181,7 +181,7 @@ onMounted(load)
           <dt>상품 합계</dt>
           <dd><strong data-testid="cart-subtotal">{{ won(cart.subtotal) }}</strong></dd>
         </div>
-        <div class="amounts__row amounts__row--discount">
+        <div :class="['amounts__row', { 'amounts__row--discount': cart.discount > 0 }]">
           <dt>할인 금액</dt>
           <dd><strong data-testid="cart-discount">{{ discountWon(cart.discount) }}</strong></dd>
         </div>

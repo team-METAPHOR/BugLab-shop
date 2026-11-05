@@ -57,8 +57,8 @@
   "price": 30000,
   "stock": 50,
   "soldOut": false,
-  "imageUrl": "/images/keyboard.svg",
-  "description": "조용한 타건감의 2.4GHz 무선 키보드"
+  "imageUrl": "/images/photos/wireless-keyboard.jpg",
+  "description": "둥근 키캡과 조용한 타건감의 2.4GHz 무선 키보드"
 }
 ```
 
@@ -66,7 +66,7 @@
 ```json
 {
   "items": [
-    { "productId": 1, "name": "BugLab 무선 키보드", "imageUrl": "/images/keyboard.svg",
+    { "productId": 1, "name": "BugLab 무선 키보드", "imageUrl": "/images/photos/wireless-keyboard.jpg",
       "unitPrice": 30000, "quantity": 1, "maxQuantity": 10, "lineTotal": 30000 }
   ],
   "appliedCoupons": [ { "code": "SAVE5000", "amount": 5000 } ],

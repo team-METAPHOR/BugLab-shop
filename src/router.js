@@ -6,6 +6,7 @@ import LoginView from './views/LoginView.vue'
 import SignupView from './views/SignupView.vue'
 import CartView from './views/CartView.vue'
 import NotFoundView from './views/NotFoundView.vue'
+import CreditsView from './views/CreditsView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -13,6 +14,7 @@ const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
   { path: '/signup', name: 'signup', component: SignupView, meta: { guestOnly: true } },
   { path: '/cart', name: 'cart', component: CartView, meta: { requiresAuth: true } },
+  { path: '/credits', name: 'credits', component: CreditsView },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ]
 
